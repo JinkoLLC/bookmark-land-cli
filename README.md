@@ -93,13 +93,13 @@ bookmark trash list                # what's in the Trash, most recently Removed 
 bookmark trash empty               # Permanently delete everything in the Trash (asks [y/N])
 ```
 
-- Every command that takes ids takes several, or `-` to read them from stdin, one per line. Large lists are sent in batches of 50:
+- `rm`, `restore`, `favorite` and `unfavorite` take several ids, or `-` to read them from stdin, one per line. Large lists are sent in batches of 50. `list` prints one page (up to 200 with `--limit 200`), so this removes at most 200; run it again for the rest:
 
   ```sh
-  bookmark list --domain old.example.com --json | jq -r '.data[].id' | bookmark rm -
+  bookmark list --domain old.example.com --limit 200 --json | jq -r '.data[].id' | bookmark rm -
   ```
 
-- When the API changes fewer Bookmarks than you asked for, the CLI says so, for example "2 of 3 removed (1 not found or unchanged)", and still exits 0. Already-Removed or already-favorite Bookmarks count as unchanged. With `--json`, these commands print `{ "requested": 3, "affected": 2 }`.
+- When the API changes fewer Bookmarks than you asked for, the CLI says so, for example "2 of 3 removed (1 not found or unchanged)", and still exits 0. Already-Removed or already-favorite Bookmarks count as unchanged. With `--json`, these commands print `{ "requested": 3, "affected": 2 }`. The API doesn't say which ids it skipped, so `rm` prints every id it sent: all the ones it Removed are there, and skipped ones may be too.
 - Remove and Restore never ask for confirmation. `rm --permanent` and `trash empty` can't be undone: they ask `[y/N]` in a terminal, and without a terminal they exit 2 unless you pass `--yes`.
 - `trash list` shows the ids to pass to `restore` or `rm --permanent`. With `--json`, each Bookmark also has `trashedAt` and `deletesAt` (30 days after it was Removed).
 - `trash empty` Permanently deletes up to 200 Bookmarks at once. When there were more, the rest are deleted in the background, and the CLI tells you to check again later with `trash list`.
