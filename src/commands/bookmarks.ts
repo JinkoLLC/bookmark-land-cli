@@ -9,9 +9,15 @@ import {
   printJson,
   printObject,
   printTable,
+  success,
   warn,
 } from "../output.ts";
-import type { Bookmark, BookmarkPage, Envelope } from "../types.ts";
+import type {
+  Bookmark,
+  BookmarkPage,
+  CreatedBookmark,
+  Envelope,
+} from "../types.ts";
 
 export const BOOKMARK_TYPES = ["link", "article", "image", "video", "document"];
 const SORTS = ["newest", "oldest", "title", "domain"];
@@ -35,6 +41,27 @@ export function intFlag(
     throw usageError(`--${flag} must be a whole number from ${min} to ${max}`);
   }
   return n;
+}
+
+export function maxLength(what: string, value: unknown, max: number) {
+  if (typeof value === "string" && value.length > max) {
+    throw usageError(
+      `${what} can be at most ${max} characters (got ${value.length})`,
+    );
+  }
+  return value as string | undefined;
+}
+
+function webUrl(value: unknown) {
+  if (value === undefined) return undefined;
+  let url: URL | undefined;
+  try {
+    url = new URL(value as string);
+  } catch {}
+  if (url?.protocol !== "http:" && url?.protocol !== "https:") {
+    throw usageError(`Not a valid http or https URL: ${value}`);
+  }
+  return maxLength("The URL", value, 2048);
 }
 
 // The same table everywhere Bookmarks are listed; --json prints `data` as the API returned it.
@@ -67,7 +94,108 @@ export const getBookmark = async (ctx: Context, id: string) =>
     )
   ).data;
 
+const textFlags = {
+  title: { type: "string", description: "Title, up to 100 characters" },
+  description: {
+    type: "string",
+    description: "Description, up to 500 characters",
+  },
+  note: { type: "string", description: "Personal note, up to 500 characters" },
+} as const;
+
+// The API answers every invalid request with the same "Request rejected", so check the documented limits first.
+const textFields = (flags: Flags) => ({
+  title: maxLength("The title", flags.title, 100),
+  description: maxLength("The description", flags.description, 500),
+  note: maxLength("The note", flags.note, 500),
+});
+
 export const bookmarkCommands: Command[] = [
+  {
+    name: "add",
+    args: "<url>",
+    summary: "Save a Bookmark and print its id",
+    flags: {
+      ...textFlags,
+      tag: {
+        type: "string",
+        multiple: true,
+        description: "Tag, up to 25 characters (repeat for more, up to 10)",
+      },
+      collection: {
+        type: "string",
+        description: "Collection to save it in (id; default: Unsorted)",
+      },
+      type: {
+        type: "string",
+        description: `Type: ${BOOKMARK_TYPES.join(", ")}`,
+      },
+      favorite: { type: "boolean", description: "Mark it as a favorite" },
+    },
+    async run(ctx, [url], flags) {
+      const tags = flags.tag as string[] | undefined;
+      if (tags && tags.length > 10)
+        throw usageError(
+          `A Bookmark can have at most 10 Tags (got ${tags.length})`,
+        );
+      for (const tag of tags ?? []) {
+        if (!tag.trim()) throw usageError("Tag names can't be empty");
+        maxLength(`The Tag name "${tag}"`, tag, 25);
+      }
+      const body = {
+        url: webUrl(url),
+        ...textFields(flags),
+        tags,
+        collectionId: flags.collection as string | undefined,
+        type: oneOf("type", flags.type, BOOKMARK_TYPES),
+        isFavorite: flags.favorite ? true : undefined,
+      };
+      const { data } = await request<Envelope<CreatedBookmark>>(
+        ctx.apiUrl,
+        "/bookmarks",
+        {
+          method: "POST",
+          token: await requireToken(ctx.apiUrl),
+          body,
+        },
+      );
+      if (ctx.json) return printJson(data);
+      print(data.bookmarkId);
+      if (data.restored) success(`Restored from the Trash: ${data.bookmarkId}`);
+      else if (data.duplicate)
+        warn(
+          `This URL was already saved, so a duplicate was created: ${data.bookmarkId}`,
+        );
+    },
+  },
+  {
+    name: "edit",
+    args: "<id>",
+    summary: "Change a Bookmark's title, description, URL or note",
+    flags: {
+      ...textFlags,
+      url: { type: "string", description: "New URL, up to 2,048 characters" },
+    },
+    async run(ctx, [id], flags) {
+      const body = { ...textFields(flags), url: webUrl(flags.url) };
+      if (Object.values(body).every((v) => v === undefined)) {
+        throw usageError(
+          "Nothing to change. Pass at least one of --title, --description, --url or --note",
+        );
+      }
+      const { data } = await request<Envelope<unknown>>(
+        ctx.apiUrl,
+        `/bookmarks/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          token: await requireToken(ctx.apiUrl),
+          body,
+        },
+      );
+      if (ctx.json) return printJson(data);
+      success(`Updated ${id}`);
+    },
+  },
   {
     name: "list",
     summary: "List your Bookmarks, newest first",

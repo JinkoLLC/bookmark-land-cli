@@ -65,3 +65,10 @@ export interface BookmarkPage {
   hasMore: boolean;
   truncated: boolean;
 }
+
+// Creating a Bookmark returns its id, not the Bookmark. A URL that is already saved is saved again.
+export interface CreatedBookmark {
+  bookmarkId: string;
+  duplicate: boolean;
+  restored: boolean;
+}

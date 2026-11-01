@@ -69,6 +69,19 @@ bookmark open bk_123                        # print its URL and open it in your 
 - `search` returns at most about 75 matches and has no pages.
 - `open` only opens `http` and `https` URLs. It always prints the URL, so it also works over SSH.
 
+### Saving and editing Bookmarks
+
+```sh
+bookmark add https://example.com                      # prints the new Bookmark's id
+bookmark add https://example.com --title "Example" --tag dev --tag reading \
+  --collection col_123 --type article --favorite --note "Read later"
+bookmark edit bk_123 --title "Better title"           # also --description, --url, --note
+```
+
+- `add` takes `--title`, `--description`, `--note`, `--tag` (repeat it), `--collection <id>`, `--type` and `--favorite`.
+- If the URL is in the Trash, `add` Restores that Bookmark instead and says so. If it's already saved, the API saves another copy, and `add` warns you with the new id.
+- The API rejects invalid input with a generic error, so the CLI checks the limits first and tells you what's wrong: URLs must be `http` or `https` and up to 2,048 characters, titles up to 100, descriptions and notes up to 500, at most 10 Tags of up to 25 characters each.
+
 ### Account
 
 ```sh
