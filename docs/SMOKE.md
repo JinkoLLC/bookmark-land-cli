@@ -29,3 +29,8 @@ Do these on each OS. Before you start, unset `BOOKMARK_TOKEN` and `BOOKMARK_NO_K
 - [ ] The login is listed in Settings under this computer's hostname, or under the `--client-name` you gave.
 - [ ] `echo "$TOKEN" | bookmark login --with-token` stores a Token created in Settings, and a wrong Token exits 3 and stores nothing.
 - [ ] `bookmark logout` revokes the Token (it disappears from Settings) and forgets it: it is no longer in the keychain.
+
+## Finding Bookmarks
+
+- [ ] `bookmark list` in a terminal shows a table that fits the window, with long titles cut off. `bookmark list | cat` prints tab-separated values.
+- [ ] `bookmark open <id>` opens the Bookmark in your default browser.

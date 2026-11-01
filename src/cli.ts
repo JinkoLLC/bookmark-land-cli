@@ -2,6 +2,7 @@
 import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
 import { authCommands } from "./commands/auth.ts";
+import { bookmarkCommands } from "./commands/bookmarks.ts";
 import { resolveApiUrl } from "./config.ts";
 import { CliError, EXIT, usageError } from "./errors.ts";
 import { print, printError } from "./output.ts";
@@ -38,7 +39,7 @@ const GLOBAL_FLAGS: Record<string, Flag> = {
   help: { type: "boolean", short: "h", description: "Show help" },
 };
 
-const COMMANDS: Command[] = [...authCommands];
+const COMMANDS: Command[] = [...bookmarkCommands, ...authCommands];
 
 function findCommand(argv: string[]): Command | undefined {
   const twoWords = argv.slice(0, 2).join(" ");

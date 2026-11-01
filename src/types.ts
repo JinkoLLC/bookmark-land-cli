@@ -29,3 +29,39 @@ export interface DeviceToken {
   token_type: string;
   scopes: string[];
 }
+
+export type BookmarkType = "link" | "article" | "image" | "video" | "document";
+
+// Fields with no value are left out by the API.
+export interface Bookmark {
+  id: string;
+  url: string;
+  title?: string;
+  description?: string;
+  excerpt?: string;
+  note?: string;
+  type?: BookmarkType;
+  isFavorite?: boolean;
+  tags?: string[];
+  collectionId?: string | null;
+  domain?: string;
+  favicon?: string;
+  coverImage?: string | null;
+  clickCount?: number;
+  metadataStatus?: string;
+  linkStatus?: string;
+  lastCheckedAt?: string;
+  httpStatusCode?: number;
+  lastCheckErrorKind?: string;
+  embeddable?: boolean;
+  siteRisk?: { level: string; findingCount: number };
+  savedAt?: string;
+  createdAt?: string;
+}
+
+export interface BookmarkPage {
+  data: Bookmark[];
+  cursor: string | null;
+  hasMore: boolean;
+  truncated: boolean;
+}

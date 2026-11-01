@@ -52,6 +52,23 @@ Set `BOOKMARK_TOKEN` to a Token you created in Settings. It takes precedence ove
 
 ## Commands
 
+### Finding Bookmarks
+
+```sh
+bookmark list                               # newest first: ID, TITLE, DOMAIN, TAGS
+bookmark list --favorite --type article     # filters: --favorite, --domain, --type, --collection
+bookmark list --sort title --limit 200      # --sort newest|oldest|title|domain, --limit 1–200 (default 50)
+bookmark list --cursor eyJwb3MiOjUwfQ       # the next page, from the hint after the table
+bookmark search react hooks                 # Bookmarks whose title, description or URL match every word
+bookmark show bk_123                        # every field of one Bookmark
+bookmark open bk_123                        # print its URL and open it in your browser
+```
+
+- `--type` is one of `link`, `article`, `image`, `video`, `document`.
+- When there are more results, `list` ends with the `--cursor` for the next page (on stderr). Repeat the same filters with it.
+- `search` returns at most about 75 matches and has no pages.
+- `open` only opens `http` and `https` URLs. It always prints the URL, so it also works over SSH.
+
 ### Account
 
 ```sh
@@ -61,6 +78,7 @@ bookmark whoami --json   # the API's data, unchanged
 
 ## Output
 
+- On a terminal, lists are tables that fit its width. When stdout is piped, they are tab-separated values with no header, no truncation and no color, so `cut` and `awk` work: `bookmark list | cut -f1` prints the ids.
 - Data goes to stdout. Messages, warnings and errors go to stderr.
 - `--json` prints the API's `data` unchanged, so it matches the [API docs](https://docs.bookmark.land/docs).
 - With `--json`, errors are printed to stderr as `{ "error": { "code", "message", "requestId" } }`.
