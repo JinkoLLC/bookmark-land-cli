@@ -12,6 +12,7 @@ import {
   success,
   warn,
 } from "../output.ts";
+import { resolveCollection } from "../resolve.ts";
 import type {
   Bookmark,
   BookmarkPage,
@@ -124,7 +125,8 @@ export const bookmarkCommands: Command[] = [
       },
       collection: {
         type: "string",
-        description: "Collection to save it in (id; default: Unsorted)",
+        description:
+          "Collection to save it in, by name or id (default: Unsorted)",
       },
       type: {
         type: "string",
@@ -146,18 +148,24 @@ export const bookmarkCommands: Command[] = [
         url: webUrl(url),
         ...textFields(flags),
         tags,
-        collectionId: flags.collection as string | undefined,
         type: oneOf("type", flags.type, BOOKMARK_TYPES),
         isFavorite: flags.favorite ? true : undefined,
       };
+      const collection = flags.collection as string | undefined;
+      if (collection?.toLowerCase() === "unsorted") {
+        throw usageError(
+          "New Bookmarks go to Unsorted by default: leave out --collection",
+        );
+      }
+      const token = await requireToken(ctx.apiUrl);
+      const collectionId =
+        collection === undefined
+          ? undefined
+          : await resolveCollection(ctx.apiUrl, token, collection);
       const { data } = await request<Envelope<CreatedBookmark>>(
         ctx.apiUrl,
         "/bookmarks",
-        {
-          method: "POST",
-          token: await requireToken(ctx.apiUrl),
-          body,
-        },
+        { method: "POST", token, body: { ...body, collectionId } },
       );
       if (ctx.json) return printJson(data);
       print(data.bookmarkId);
@@ -220,7 +228,7 @@ export const bookmarkCommands: Command[] = [
       },
       collection: {
         type: "string",
-        description: "Only Bookmarks in this Collection (id)",
+        description: "Only Bookmarks in this Collection (name or id)",
       },
     },
     async run(ctx, _args, flags: Flags) {
@@ -231,15 +239,17 @@ export const bookmarkCommands: Command[] = [
         isFavorite: flags.favorite ? true : undefined,
         domain: flags.domain as string | undefined,
         type: oneOf("type", flags.type, BOOKMARK_TYPES),
-        collectionId: flags.collection as string | undefined,
       };
+      const token = await requireToken(ctx.apiUrl);
+      const collection = flags.collection as string | undefined;
+      const collectionId =
+        collection === undefined
+          ? undefined
+          : await resolveCollection(ctx.apiUrl, token, collection);
       const { data } = await request<Envelope<BookmarkPage>>(
         ctx.apiUrl,
         "/bookmarks",
-        {
-          token: await requireToken(ctx.apiUrl),
-          query,
-        },
+        { token, query: { ...query, collectionId } },
       );
       printBookmarks(ctx, data, data.data);
       if (!ctx.json && data.hasMore && data.cursor) {

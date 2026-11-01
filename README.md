@@ -56,7 +56,7 @@ Set `BOOKMARK_TOKEN` to a Token you created in Settings. It takes precedence ove
 
 ```sh
 bookmark list                               # newest first: ID, TITLE, DOMAIN, TAGS
-bookmark list --favorite --type article     # filters: --favorite, --domain, --type, --collection
+bookmark list --favorite --type article     # filters: --favorite, --domain, --type, --collection <name or id>
 bookmark list --sort title --limit 200      # --sort newest|oldest|title|domain, --limit 1–200 (default 50)
 bookmark list --cursor eyJwb3MiOjUwfQ       # the next page, from the hint after the table
 bookmark search react hooks                 # Bookmarks whose title, description or URL match every word
@@ -74,13 +74,31 @@ bookmark open bk_123                        # print its URL and open it in your 
 ```sh
 bookmark add https://example.com                      # prints the new Bookmark's id
 bookmark add https://example.com --title "Example" --tag dev --tag reading \
-  --collection col_123 --type article --favorite --note "Read later"
+  --collection Reading --type article --favorite --note "Read later"
 bookmark edit bk_123 --title "Better title"           # also --description, --url, --note
 ```
 
-- `add` takes `--title`, `--description`, `--note`, `--tag` (repeat it), `--collection <id>`, `--type` and `--favorite`.
+- `add` takes `--title`, `--description`, `--note`, `--tag` (repeat it), `--collection` (name or id; leave it out for Unsorted), `--type` and `--favorite`.
 - If the URL is in the Trash, `add` Restores that Bookmark instead and says so. If it's already saved, the API saves another copy, and `add` warns you with the new id.
 - The API rejects invalid input with a generic error, so the CLI checks the limits first and tells you what's wrong: URLs must be `http` or `https` and up to 2,048 characters, titles up to 100, descriptions and notes up to 500, at most 10 Tags of up to 25 characters each.
+
+### Collections
+
+```sh
+bookmark collections list                          # nesting and Bookmark counts
+bookmark collections list --trashed                # Collections in the Trash
+bookmark collections show Reading                  # details, including notes
+bookmark collections add React --parent Frontend --icon atom --color blue
+bookmark collections edit Reading --name "To read" --notes "Long reads for the weekend"
+bookmark collections rm Reading                    # Remove it, its child Collections and their Bookmarks
+bookmark collections restore Reading               # Restore them from the Trash
+bookmark collections share Reading                 # whether it's shared, and its public link
+```
+
+- Wherever a Collection is expected (including `list --collection` and `add --collection`), you can give its exact name or its id. Names aren't unique: when a name matches more than one Collection, the CLI exits 2 and lists each match with its id, so you can pick one.
+- Collection names are up to 50 characters, and notes up to 20,000. Collections nest up to five levels deep.
+- `collections rm` and `collections restore` move at most 1,000 Collections and Bookmarks at once. For a larger Collection, do it in parts: Remove or Restore its child Collections first, or move some of its Bookmarks out.
+- `collections list --json` prints every Collection, with all pages joined: `{ "collections": [...], "nextCursor": null }`.
 
 ### Account
 

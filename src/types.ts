@@ -72,3 +72,24 @@ export interface CreatedBookmark {
   duplicate: boolean;
   restored: boolean;
 }
+
+export interface Collection {
+  id: string;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  parentId: string | null;
+  depth?: number;
+  order?: number;
+  bookmarkCount?: number;
+  notes?: string;
+  isShared?: boolean;
+  shareSlug?: string | null;
+  createdAt?: string;
+}
+
+// The Collections list is paginated, unlike the published docs show.
+export interface CollectionPage {
+  collections: Collection[];
+  nextCursor: string | null;
+}

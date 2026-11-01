@@ -9,6 +9,12 @@ import {
 import { fakeBrowser, noTty, type RunResult, run, runTty } from "./helpers.ts";
 
 const env = { BOOKMARK_TOKEN: "bkl_env" };
+const collections = {
+  "GET /collections": ok({
+    collections: [{ id: "col_1", name: "Reading", parentId: null }],
+    nextCursor: null,
+  }),
+};
 const long =
   "A very long title that will never fit in an eighty column terminal without being cut";
 const bookmarks = [
@@ -143,24 +149,27 @@ test("list --json prints the API's data unchanged", async () => {
 });
 
 test("list sends every filter as a query parameter", async () => {
-  const { code, requests } = await withServer({ "GET /bookmarks": page() }, [
-    "list",
-    "--limit",
-    "200",
-    "--cursor",
-    "c1",
-    "--sort",
-    "title",
-    "--favorite",
-    "--domain",
-    "github.com",
-    "--type",
-    "article",
-    "--collection",
-    "col_1",
-  ]);
+  const { code, requests } = await withServer(
+    { ...collections, "GET /bookmarks": page() },
+    [
+      "list",
+      "--limit",
+      "200",
+      "--cursor",
+      "c1",
+      "--sort",
+      "title",
+      "--favorite",
+      "--domain",
+      "github.com",
+      "--type",
+      "article",
+      "--collection",
+      "col_1",
+    ],
+  );
   assert.equal(code, 0);
-  assert.deepEqual(requests[0].query, {
+  assert.deepEqual(requests.at(-1)?.query, {
     limit: "200",
     cursor: "c1",
     sortBy: "title",
