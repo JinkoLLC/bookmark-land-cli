@@ -9,6 +9,12 @@ import {
 import { run } from "./helpers.ts";
 
 const env = { BOOKMARK_TOKEN: "bkl_env" };
+const collections = {
+  "GET /collections": ok({
+    collections: [{ id: "col_1", name: "Reading", parentId: null }],
+    nextCursor: null,
+  }),
+};
 const created = (extra = {}) =>
   ok({ bookmarkId: "bk_new", duplicate: false, restored: false, ...extra });
 
@@ -29,7 +35,7 @@ async function withServer(
 
 test("add saves a Bookmark with every detail and prints the new id", async () => {
   const { code, stdout, stderr, requests } = await withServer(
-    { "POST /bookmarks": created() },
+    { ...collections, "POST /bookmarks": created() },
     [
       "add",
       "https://example.com/a",
@@ -53,7 +59,7 @@ test("add saves a Bookmark with every detail and prints the new id", async () =>
   assert.equal(code, 0, stderr);
   assert.equal(stdout, "bk_new\n");
   assert.equal(stderr, "");
-  assert.deepEqual(requests[0].body, {
+  assert.deepEqual(requests[1].body, {
     url: "https://example.com/a",
     title: "Example",
     description: "About it",
