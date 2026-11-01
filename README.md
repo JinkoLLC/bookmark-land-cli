@@ -125,6 +125,25 @@ bookmark collections share Reading                 # whether it's shared, and it
 - `collections rm` and `collections restore` move at most 1,000 Collections and Bookmarks at once. For a larger Collection, do it in parts: Remove or Restore its child Collections first, or move some of its Bookmarks out.
 - `collections list --json` prints every Collection, with all pages joined: `{ "collections": [...], "nextCursor": null }`.
 
+### Tags
+
+Tags are always named, never by id, and case-insensitively (`AI` and `ai` are the same Tag). Names are up to 25 characters and can use `/` for hierarchy, such as `dev/js`.
+
+```sh
+bookmark tags list                      # Tags and how many Bookmarks have each
+bookmark tags add dev/js --color yellow
+bookmark tags rename dev/js dev/javascript
+bookmark tags rm old-tag                # delete the Tag; its Bookmarks are untouched (asks [y/N])
+bookmark tags merge js javascript       # re-tag js Bookmarks as javascript, then delete js (asks [y/N])
+bookmark tag bk_1 bk_2 reading          # add a Tag to Bookmarks (it's created if needed)
+bookmark untag bk_1 bk_2 reading        # remove it
+bookmark list --tag reading             # the Bookmarks with a Tag
+```
+
+- `tag` and `untag` take several ids, or `-` for stdin, like `rm`: `bookmark list --json | jq -r '.data[].id' | bookmark tag - reading`.
+- `tags rm` and `tags merge` ask `[y/N]` in a terminal and need `--yes` otherwise.
+- `list --tag` works like any other `list`: it pages with `--cursor` and combines with `--collection`, `--domain`, `--type` and `--favorite`. It sorts by `newest` or `oldest` only.
+
 ### Smart folders
 
 A Smart folder is a saved set of rules. It holds no Bookmarks of its own; it matches them.

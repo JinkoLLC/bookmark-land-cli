@@ -231,9 +231,24 @@ export const bookmarkCommands: Command[] = [
         type: "string",
         description: "Only Bookmarks in this Collection (name or id)",
       },
+      tag: {
+        type: "string",
+        description:
+          "Only Bookmarks with this Tag (sorts newest or oldest only)",
+      },
     },
     async run(ctx, _args, flags: Flags) {
+      // A Tag's Bookmarks are ordered by date only; the API rejects title and domain sorts.
+      if (
+        flags.tag !== undefined &&
+        (flags.sort === "title" || flags.sort === "domain")
+      ) {
+        throw usageError(
+          "--tag sorts by newest or oldest only, not by title or domain",
+        );
+      }
       const query = {
+        tag: flags.tag as string | undefined,
         limit: intFlag("limit", flags.limit, 1, 200),
         cursor: flags.cursor as string | undefined,
         sortBy: oneOf("sort", flags.sort, SORTS),

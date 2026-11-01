@@ -6,6 +6,7 @@ import { bookmarkCommands, idCommands } from "./commands/bookmarks.ts";
 import { collectionCommands } from "./commands/collections.ts";
 import { insightCommands } from "./commands/insights.ts";
 import { smartFolderCommands } from "./commands/smart-folders.ts";
+import { tagCommands } from "./commands/tags.ts";
 import { trashCommands } from "./commands/trash.ts";
 import { resolveApiUrl } from "./config.ts";
 import { CliError, EXIT, usageError } from "./errors.ts";
@@ -47,6 +48,7 @@ const COMMANDS: Command[] = [
   ...bookmarkCommands,
   ...idCommands,
   ...collectionCommands,
+  ...tagCommands,
   ...smartFolderCommands,
   ...trashCommands,
   ...insightCommands,

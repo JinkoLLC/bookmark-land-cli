@@ -147,3 +147,12 @@ export interface Usage {
   plan: string;
   storage: { usedBytes: number; limitBytes: number; maxFileBytes: number };
 }
+
+export interface Tag {
+  id: string;
+  name: string;
+  color?: string | null;
+  parentId?: string | null;
+  count?: number;
+  createdAt?: string;
+}
