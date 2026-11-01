@@ -65,3 +65,112 @@ export interface BookmarkPage {
   hasMore: boolean;
   truncated: boolean;
 }
+
+// Creating a Bookmark returns its id, not the Bookmark. A URL that is already saved is saved again.
+export interface CreatedBookmark {
+  bookmarkId: string;
+  duplicate: boolean;
+  restored: boolean;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  parentId: string | null;
+  depth?: number;
+  order?: number;
+  bookmarkCount?: number;
+  notes?: string;
+  isShared?: boolean;
+  shareSlug?: string | null;
+  createdAt?: string;
+}
+
+// The Collections list is paginated, unlike the published docs show.
+export interface CollectionPage {
+  collections: Collection[];
+  nextCursor: string | null;
+}
+
+export interface SmartFolderRules {
+  match: "all" | "any";
+  conditions: { field: string; operator: string; value: string }[];
+}
+
+export interface SmartFolder {
+  id: string;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  rules: SmartFolderRules;
+  createdAt?: string;
+}
+
+export interface SmartFolderPage {
+  bookmarks: Bookmark[];
+  continueCursor: string | null;
+  truncated?: boolean;
+}
+
+export interface Stats {
+  total: number;
+  favorites: number;
+  unsorted: number;
+  typeCounts: Record<string, number>;
+  noTags: number;
+}
+
+export interface SiteSecurity {
+  site: string;
+  riskLevel: string;
+  scanOutcome?: string;
+  lastScannedAt?: string;
+  detectedSoftware: { product: string; version?: string }[];
+  findings: {
+    product: string;
+    version?: string;
+    level: string;
+    cycle?: string;
+    eolDate?: string;
+    cveId?: string;
+    cvss?: number;
+    kev?: boolean;
+  }[];
+}
+
+export interface Usage {
+  bookmarkCount: number;
+  trashedCount: number;
+  bookmarkLimit: number;
+  plan: string;
+  storage: { usedBytes: number; limitBytes: number; maxFileBytes: number };
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color?: string | null;
+  parentId?: string | null;
+  count?: number;
+  createdAt?: string;
+}
+
+// Times are epoch milliseconds.
+export interface Job {
+  id: string;
+  type: "import_html" | "export_json" | "export_csv" | "export_html";
+  status: "pending" | "running" | "finalizing" | "completed" | "failed";
+  progress?: { processed: number; total?: number };
+  createdAt?: number;
+  artifactExpiresAt?: number;
+  result?: {
+    total?: number;
+    imported?: number;
+    duplicates?: number;
+    skipped?: number;
+    quotaLimited?: boolean;
+  };
+  error?: { code?: string; message?: string };
+}

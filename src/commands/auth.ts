@@ -13,16 +13,11 @@ import type { Command } from "../cli.ts";
 import { pollForToken, startDeviceLogin } from "../device-login.ts";
 import { usageError } from "../errors.ts";
 import { info, printFields, printJson, success, warn } from "../output.ts";
+import { readStdin } from "../stdin.ts";
 import type { DeviceCode, Envelope, Me } from "../types.ts";
 
 const verify = async (apiUrl: string, token: string) =>
   (await request<Envelope<Me>>(apiUrl, "/auth/verify", { token })).data;
-
-async function readStdin(): Promise<string> {
-  let text = "";
-  for await (const chunk of process.stdin) text += chunk;
-  return text;
-}
 
 // Prompts only on a terminal; otherwise prints what the user needs to approve from another device.
 async function waitForApproval(device: DeviceCode): Promise<void> {

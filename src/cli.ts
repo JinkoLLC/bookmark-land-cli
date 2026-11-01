@@ -2,7 +2,14 @@
 import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
 import { authCommands } from "./commands/auth.ts";
-import { bookmarkCommands } from "./commands/bookmarks.ts";
+import { bookmarkCommands, idCommands } from "./commands/bookmarks.ts";
+import { collectionCommands } from "./commands/collections.ts";
+import { coverCommands } from "./commands/covers.ts";
+import { insightCommands } from "./commands/insights.ts";
+import { jobCommands } from "./commands/jobs.ts";
+import { smartFolderCommands } from "./commands/smart-folders.ts";
+import { tagCommands } from "./commands/tags.ts";
+import { trashCommands } from "./commands/trash.ts";
 import { resolveApiUrl } from "./config.ts";
 import { CliError, EXIT, usageError } from "./errors.ts";
 import { print, printError } from "./output.ts";
@@ -39,7 +46,18 @@ const GLOBAL_FLAGS: Record<string, Flag> = {
   help: { type: "boolean", short: "h", description: "Show help" },
 };
 
-const COMMANDS: Command[] = [...bookmarkCommands, ...authCommands];
+const COMMANDS: Command[] = [
+  ...bookmarkCommands,
+  ...idCommands,
+  ...coverCommands,
+  ...collectionCommands,
+  ...tagCommands,
+  ...smartFolderCommands,
+  ...trashCommands,
+  ...jobCommands,
+  ...insightCommands,
+  ...authCommands,
+];
 
 function findCommand(argv: string[]): Command | undefined {
   const twoWords = argv.slice(0, 2).join(" ");
@@ -68,6 +86,13 @@ function printOverview(): void {
   print("\nRun `bookmark <command> --help` for a command's flags.");
 }
 
+function printGroupHelp(group: Command[]): void {
+  const width = Math.max(...group.map((c) => c.name.length)) + 2;
+  print("Commands:");
+  for (const c of group) print(`  ${c.name.padEnd(width)}${c.summary}`);
+  print("\nRun `bookmark <command> --help` for a command's flags.");
+}
+
 function printCommandHelp(command: Command): void {
   print(`${command.summary}\n`);
   print(
@@ -88,7 +113,15 @@ async function main(argv: string[]): Promise<void> {
     if (argv.length === 0 || ["help", "--help", "-h"].includes(argv[0])) {
       return printOverview();
     }
-    throw usageError(`Unknown command: ${argv[0]}. Run: bookmark --help`);
+    const group = COMMANDS.filter((c) => c.name.startsWith(`${argv[0]} `));
+    if (group.length && (!argv[1] || ["--help", "-h"].includes(argv[1]))) {
+      return printGroupHelp(group);
+    }
+    const name = group.length ? `${argv[0]} ${argv[1]}` : argv[0];
+    const help = group.length
+      ? `bookmark ${argv[0]} --help`
+      : "bookmark --help";
+    throw usageError(`Unknown command: ${name}. Run: ${help}`);
   }
 
   let parsed: ReturnType<typeof parseArgs>;
