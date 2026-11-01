@@ -52,7 +52,13 @@ test("an unknown flag exits 2 with a hint", async () => {
 });
 
 test("an invalid API URL exits 2 before anything is sent", async () => {
-  for (const url of ["not a url", "ftp://example.com/v1"]) {
+  for (const url of [
+    "not a url",
+    "ftp://example.com/v1",
+    "http://api.example.com/v1",
+    "http://localhost.evil.com/v1",
+    "http://127.0.0.1.evil.com/v1",
+  ]) {
     const flag = await run(["whoami", "--api-url", url], { env });
     assert.equal(flag.code, 2);
     assert.match(flag.stderr, /API URL/);
@@ -60,6 +66,28 @@ test("an invalid API URL exits 2 before anything is sent", async () => {
       env: { ...env, BOOKMARK_API_URL: url },
     });
     assert.equal(fromEnv.code, 2);
+  }
+});
+
+test("http is accepted for loopback hosts", async () => {
+  const server = await startFakeServer({ "GET /auth/verify": ok(me) });
+  try {
+    const { port } = new URL(server.url);
+    const ok127 = await run(["whoami"], {
+      apiUrl: `http://127.0.0.1:${port}/v1`,
+      env,
+    });
+    assert.equal(ok127.code, 0, ok127.stderr);
+  } finally {
+    await server.close();
+  }
+  // Nothing listens on port 1: a network error (1), not a usage error (2), means the URL was accepted.
+  for (const host of ["localhost", "[::1]"]) {
+    const { code } = await run(["whoami"], {
+      apiUrl: `http://${host}:1/v1`,
+      env,
+    });
+    assert.equal(code, 1, host);
   }
 });
 

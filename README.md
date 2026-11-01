@@ -49,11 +49,11 @@ bookmark whoami --json   # the API's data, unchanged
 
 ## Environment variables
 
-| Variable           | Meaning                                                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `BOOKMARK_TOKEN`   | The Token to use.                                                                                                         |
-| `BOOKMARK_API_URL` | The API base URL (default `https://api.bookmark.land/v1`). `--api-url` overrides it. It must be an `http` or `https` URL. |
-| `NO_COLOR`         | Set to any value to turn colors off.                                                                                      |
+| Variable           | Meaning                                                                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BOOKMARK_TOKEN`   | The Token to use.                                                                                                                                                                  |
+| `BOOKMARK_API_URL` | The API base URL (default `https://api.bookmark.land/v1`). `--api-url` overrides it. It must be an `https` URL (`http` is accepted only for `localhost`, `127.0.0.1` and `[::1]`). |
+| `NO_COLOR`         | Set to any value to turn colors off.                                                                                                                                               |
 
 ## Exit codes
 
