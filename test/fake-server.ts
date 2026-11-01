@@ -6,27 +6,32 @@ export interface FakeRequest {
   path: string;
   query: Record<string, string>;
   headers: Record<string, string | string[] | undefined>;
-  body: unknown;
+  body: unknown; // parsed JSON; uploads (any other content type) are only in `raw`
+  raw: Buffer;
 }
 
 export interface FakeResponse {
   status?: number;
   body?: unknown; // sent as JSON, or as is when it is a string
   headers?: Record<string, string>;
+  bodyDelayMs?: number; // send the headers, then wait this long before the body
 }
 
-type Handler = (req: FakeRequest) => FakeResponse;
+type Handler = (req: FakeRequest) => FakeResponse | Promise<FakeResponse>;
 
-// A local stand-in for the bookmark.land API. Routes are "METHOD /path" (without /v1); a route given
-// an array answers with each response in turn and repeats the last one.
+// A local stand-in for the bookmark.land API, and for the upload and download URLs it hands out.
+// Routes are "METHOD /path" (without /v1); a route given an array answers with each response in
+// turn and repeats the last one.
 export async function startFakeServer(
   routes: Record<string, Handler | FakeResponse | FakeResponse[]>,
 ) {
   const requests: FakeRequest[] = [];
   const calls = new Map<string, number>();
   const server = createServer(async (req, res) => {
-    let text = "";
-    for await (const chunk of req) text += chunk;
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const bytes = Buffer.concat(chunks);
+    const json = String(req.headers["content-type"] ?? "").includes("json");
     const url = new URL(req.url ?? "/", "http://localhost");
     const path = url.pathname.replace(/^\/v1/, "");
     const fake: FakeRequest = {
@@ -34,7 +39,8 @@ export async function startFakeServer(
       path,
       query: Object.fromEntries(url.searchParams),
       headers: req.headers,
-      body: text ? JSON.parse(text) : undefined,
+      body: json && bytes.length ? JSON.parse(bytes.toString()) : undefined,
+      raw: bytes,
     };
     requests.push(fake);
     const key = `${fake.method} ${path}`;
@@ -50,7 +56,7 @@ export async function startFakeServer(
             },
           }
         : typeof route === "function"
-          ? route(fake)
+          ? await route(fake)
           : Array.isArray(route)
             ? route[Math.min(n, route.length - 1)]
             : route;
@@ -59,6 +65,9 @@ export async function startFakeServer(
       "content-type": raw ? "text/html" : "application/json",
       ...answer.headers,
     });
+    res.flushHeaders();
+    if (answer.bodyDelayMs)
+      await new Promise((r) => setTimeout(r, answer.bodyDelayMs));
     res.end(raw ? answer.body : JSON.stringify(answer.body ?? {}));
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -66,7 +75,11 @@ export async function startFakeServer(
   return {
     url: `http://127.0.0.1:${port}/v1`,
     requests,
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve());
+        server.closeAllConnections(); // don't wait for slow answers nobody reads any more
+      }),
   };
 }
 
