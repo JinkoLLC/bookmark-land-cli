@@ -188,7 +188,7 @@ echo '{"match":"all","conditions":[{"field":"tag","operator":"contains","value":
   | bookmark smart-folders add "AI reading" --rules-json -
 ```
 
-`smart-folders bookmarks` is limited to 2 calls a minute by the API (shared by all Smart folders), and fetches every page of a Smart folder, so a large one can hit the limit and exit 5.
+`smart-folders bookmarks` is limited to 2 calls a minute by the API (shared by all Smart folders), and fetches every page of a Smart folder, so a large one can hit the limit and exit 5. With `--json`, it prints every page joined: `{ "bookmarks": [...], "continueCursor": null, "truncated": false }`.
 
 ### Import and export
 
@@ -241,7 +241,7 @@ bookmark whoami --json   # the API's data, unchanged
 
 - On a terminal, lists are tables that fit its width. When stdout is piped, they are tab-separated values with no header, no truncation and no color, so `cut` and `awk` work: `bookmark list | cut -f1` prints the ids.
 - Data goes to stdout. Messages, warnings and errors go to stderr.
-- `--json` prints the API's `data` unchanged, so it matches the [API docs](https://docs.bookmark.land/docs).
+- `--json` prints the API's `data` unchanged, so it matches the [API docs](https://docs.bookmark.land/docs). There are three exceptions, each described in its own section: `collections list` and `smart-folders bookmarks` join every page into one, and commands that act on several ids print `{ "requested", "affected" }`.
 - With `--json`, errors are printed to stderr as `{ "error": { "code", "message", "requestId" } }`.
 - Errors include the API's request id. Quote it when you contact support.
 - `NO_COLOR` turns colors off.

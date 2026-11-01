@@ -351,3 +351,18 @@ test("open refuses URLs that aren't http or https", async () => {
   if (process.platform !== "win32")
     assert.equal(await browser.opened(), undefined);
 });
+
+test("open drops terminal control sequences from the URL it prints", async () => {
+  const { stdout } = await withServer(
+    {
+      "GET /bookmarks/bk_1": ok({
+        ...bookmarks[0],
+        url: "file:///etc/\x1b[2Jpasswd",
+      }),
+    },
+    ["open", "bk_1"],
+    run,
+    fakeBrowser().env,
+  );
+  assert.equal(stdout, "file:///etc/ [2Jpasswd\n");
+});

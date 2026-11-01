@@ -29,8 +29,9 @@ export function warn(message: string): void {
 
 // API values can hold text from any web page: drop control characters (tabs, line breaks,
 // escape sequences) so a Bookmark title can't break the layout or drive the terminal.
-// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point.
-const clean = (text: string) => text.replace(/[\x00-\x1f\x7f-\x9f]+/g, " ");
+export const clean = (text: string) =>
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point.
+  text.replace(/[\x00-\x1f\x7f-\x9f]+/g, " ");
 
 export function printFields(
   fields: [string, string | null | undefined][],

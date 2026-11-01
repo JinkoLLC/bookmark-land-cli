@@ -5,6 +5,7 @@ import { acrossIds, confirm, readIds, report } from "../bulk.ts";
 import type { Command, Context, Flags } from "../cli.ts";
 import { usageError } from "../errors.ts";
 import {
+  clean,
   info,
   print,
   printJson,
@@ -311,7 +312,7 @@ export const bookmarkCommands: Command[] = [
     async run(ctx, [id]) {
       const bookmark = await getBookmark(ctx, id);
       if (ctx.json) printJson(bookmark);
-      else print(bookmark.url);
+      else print(clean(bookmark.url)); // the browser still gets the URL unchanged
       openBrowser(bookmark.url);
     },
   },
