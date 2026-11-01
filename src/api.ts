@@ -31,6 +31,7 @@ export interface RequestOptions {
   token?: string;
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
+  signal?: AbortSignal;
 }
 
 // Returns the parsed response body; most endpoints wrap their payload in `data` (see Envelope).
@@ -51,13 +52,16 @@ export async function request<T>(
   if (options.body !== undefined) headers["content-type"] = "application/json";
 
   let res: Response;
+  let text: string;
   try {
     res = await fetch(url, {
       method: options.method ?? "GET",
       headers,
+      signal: options.signal,
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     });
+    text = await res.text(); // the body can fail or time out after the headers arrived
   } catch (err) {
     const cause = (err as { cause?: Error }).cause?.message;
     throw new CliError(
@@ -67,7 +71,6 @@ export async function request<T>(
     );
   }
 
-  const text = await res.text();
   let body: unknown;
   try {
     body = text ? JSON.parse(text) : {};

@@ -13,3 +13,19 @@ export interface Me {
   plan: string;
   status: string;
 }
+
+// Device login responses are not wrapped in `data`.
+export interface DeviceCode {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  verification_uri_complete: string;
+  expires_in: number;
+  interval: number;
+}
+
+export interface DeviceToken {
+  access_token: string;
+  token_type: string;
+  scopes: string[];
+}

@@ -13,9 +13,10 @@ export interface FakeResponse {
   status?: number;
   body?: unknown; // sent as JSON, or as is when it is a string
   headers?: Record<string, string>;
+  bodyDelayMs?: number; // send the headers, then wait this long before the body
 }
 
-type Handler = (req: FakeRequest) => FakeResponse;
+type Handler = (req: FakeRequest) => FakeResponse | Promise<FakeResponse>;
 
 // A local stand-in for the bookmark.land API. Routes are "METHOD /path" (without /v1); a route given
 // an array answers with each response in turn and repeats the last one.
@@ -50,7 +51,7 @@ export async function startFakeServer(
             },
           }
         : typeof route === "function"
-          ? route(fake)
+          ? await route(fake)
           : Array.isArray(route)
             ? route[Math.min(n, route.length - 1)]
             : route;
@@ -59,6 +60,9 @@ export async function startFakeServer(
       "content-type": raw ? "text/html" : "application/json",
       ...answer.headers,
     });
+    res.flushHeaders();
+    if (answer.bodyDelayMs)
+      await new Promise((r) => setTimeout(r, answer.bodyDelayMs));
     res.end(raw ? answer.body : JSON.stringify(answer.body ?? {}));
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -66,7 +70,11 @@ export async function startFakeServer(
   return {
     url: `http://127.0.0.1:${port}/v1`,
     requests,
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    close: () =>
+      new Promise<void>((resolve) => {
+        server.close(() => resolve());
+        server.closeAllConnections(); // don't wait for slow answers nobody reads any more
+      }),
   };
 }
 

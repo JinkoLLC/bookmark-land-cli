@@ -1,3 +1,5 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { usageError } from "./errors.ts";
 
 export const DEFAULT_API_URL = "https://api.bookmark.land/v1";
@@ -18,4 +20,14 @@ export function resolveApiUrl(flag?: string): string {
     );
   }
   return url.href.replace(/\/+$/, "");
+}
+
+export function configDir(): string {
+  if (process.platform === "win32") {
+    const appData =
+      process.env.APPDATA || join(homedir(), "AppData", "Roaming");
+    return join(appData, "bookmark-land");
+  }
+  const base = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
+  return join(base, "bookmark-land");
 }

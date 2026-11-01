@@ -21,21 +21,41 @@ bookmark --version
 
 ## Getting started
 
-Create a Token in your bookmark.land Settings and pass it in `BOOKMARK_TOKEN`:
-
 ```sh
-export BOOKMARK_TOKEN=bkl_...
-bookmark whoami
+bookmark login     # sign in with your browser
+bookmark whoami    # check which account you're using
+bookmark --help    # list every command
 ```
 
-Run `bookmark --help` to list every command, and `bookmark <command> --help` for a command's flags.
+Run `bookmark <command> --help` for a command's flags.
+
+## Login
+
+`bookmark login` signs you in with Device login, the way `gh auth login` does. It shows a User code, and when you press Enter it opens the approval page in your browser with the code already filled in. Approve it there and the CLI finishes on its own.
+
+```sh
+bookmark login                                   # default Scopes: read and write Bookmarks, Collections and Tags
+bookmark login --scopes destructive,import,export # also allow Permanently deleting, importing and exporting
+bookmark login --client-name "work laptop"        # the name this login is listed under in Settings (default: hostname)
+echo "$TOKEN" | bookmark login --with-token      # store a Token you created in Settings, after checking it works
+bookmark logout                                  # revoke this computer's Token on the server and forget it
+```
+
+- Over SSH, or whenever stdin isn't a terminal, `login` never prompts. It prints the User code and the approval URL, so you can approve from another device.
+- The Token is stored in the OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service). Without a keychain, or with `BOOKMARK_NO_KEYRING` set, it goes in `credentials.json` in the config folder, readable only by you.
+- Tokens are stored per API host, so logging in to a development server doesn't replace your normal login.
+- A command that needs a Scope you don't have tells you the `bookmark login --scopes …` command to run.
+
+### Tokens for CI and agents
+
+Set `BOOKMARK_TOKEN` to a Token you created in Settings. It takes precedence over any stored login, and nothing is written to disk. `bookmark logout` refuses to touch it: unset the variable instead, and revoke the Token in Settings if needed.
 
 ## Commands
 
 ### Account
 
 ```sh
-bookmark whoami          # name, email, plan, where the Token came from, and the API URL
+bookmark whoami          # name, email, plan, Token source (keychain, config file or BOOKMARK_TOKEN), API URL
 bookmark whoami --json   # the API's data, unchanged
 ```
 
@@ -49,11 +69,13 @@ bookmark whoami --json   # the API's data, unchanged
 
 ## Environment variables
 
-| Variable           | Meaning                                                                                                                                                                            |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BOOKMARK_TOKEN`   | The Token to use.                                                                                                                                                                  |
-| `BOOKMARK_API_URL` | The API base URL (default `https://api.bookmark.land/v1`). `--api-url` overrides it. It must be an `https` URL (`http` is accepted only for `localhost`, `127.0.0.1` and `[::1]`). |
-| `NO_COLOR`         | Set to any value to turn colors off.                                                                                                                                               |
+| Variable              | Meaning                                                                                                                                                                            |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BOOKMARK_TOKEN`      | The Token to use. Takes precedence over a stored login.                                                                                                                            |
+| `BOOKMARK_API_URL`    | The API base URL (default `https://api.bookmark.land/v1`). `--api-url` overrides it. It must be an `https` URL (`http` is accepted only for `localhost`, `127.0.0.1` and `[::1]`). |
+| `BOOKMARK_NO_KEYRING` | Set to any value to never use the OS keychain: the Token is stored in the config file.                                                                                             |
+| `XDG_CONFIG_HOME`     | Config folder base on Linux and macOS (default `~/.config`); the CLI uses `$XDG_CONFIG_HOME/bookmark-land`. On Windows it uses `%APPDATA%\bookmark-land`.                          |
+| `NO_COLOR`            | Set to any value to turn colors off.                                                                                                                                               |
 
 ## Exit codes
 
