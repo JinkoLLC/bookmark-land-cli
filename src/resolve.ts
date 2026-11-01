@@ -1,6 +1,6 @@
 import { request } from "./api.ts";
 import { CliError, EXIT, usageError } from "./errors.ts";
-import type { Collection, CollectionPage, Envelope } from "./types.ts";
+import type { Collection, CollectionPage, Envelope, Tag } from "./types.ts";
 
 export async function listCollections(
   apiUrl: string,
@@ -66,4 +66,18 @@ export async function resolveCollection(
         : " (top level)",
     trashed ? " in the Trash" : "",
   );
+}
+
+// Tags are named case-insensitively; the API needs their id for most changes.
+export async function resolveTag(
+  apiUrl: string,
+  token: string,
+  name: string,
+): Promise<Tag> {
+  const { data } = await request<Envelope<Tag[]>>(apiUrl, "/tags", { token });
+  const tag = data.find((t) => t.name.toLowerCase() === name.toLowerCase());
+  if (!tag) {
+    throw new CliError(`No Tag is named "${name}"`, EXIT.notFound, "NOT_FOUND");
+  }
+  return tag;
 }

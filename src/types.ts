@@ -113,3 +113,64 @@ export interface SmartFolderPage {
   continueCursor: string | null;
   truncated?: boolean;
 }
+
+export interface Stats {
+  total: number;
+  favorites: number;
+  unsorted: number;
+  typeCounts: Record<string, number>;
+  noTags: number;
+}
+
+export interface SiteSecurity {
+  site: string;
+  riskLevel: string;
+  scanOutcome?: string;
+  lastScannedAt?: string;
+  detectedSoftware: { product: string; version?: string }[];
+  findings: {
+    product: string;
+    version?: string;
+    level: string;
+    cycle?: string;
+    eolDate?: string;
+    cveId?: string;
+    cvss?: number;
+    kev?: boolean;
+  }[];
+}
+
+export interface Usage {
+  bookmarkCount: number;
+  trashedCount: number;
+  bookmarkLimit: number;
+  plan: string;
+  storage: { usedBytes: number; limitBytes: number; maxFileBytes: number };
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color?: string | null;
+  parentId?: string | null;
+  count?: number;
+  createdAt?: string;
+}
+
+// Times are epoch milliseconds.
+export interface Job {
+  id: string;
+  type: "import_html" | "export_json" | "export_csv" | "export_html";
+  status: "pending" | "running" | "finalizing" | "completed" | "failed";
+  progress?: { processed: number; total?: number };
+  createdAt?: number;
+  artifactExpiresAt?: number;
+  result?: {
+    total?: number;
+    imported?: number;
+    duplicates?: number;
+    skipped?: number;
+    quotaLimited?: boolean;
+  };
+  error?: { code?: string; message?: string };
+}

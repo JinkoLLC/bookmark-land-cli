@@ -26,6 +26,7 @@ interface RunOptions {
   apiUrl?: string;
   input?: string;
   env?: Record<string, string>;
+  cwd?: string;
 }
 
 // Runs the real `bookmark` process. It is isolated from the user's machine only through env.
@@ -53,8 +54,11 @@ export async function runTty(
           argv.map((a) => `'${a.replaceAll("'", `'\\''`)}'`).join(" "),
           "/dev/null",
         ];
-  // stdin is /dev/null: macOS `script` exits at once when stdin is a socket, as Node's pipes are there.
-  const result = await spawnWith("script", scriptArgs, options, "ignore");
+  // macOS `script` exits at once when stdin is a socket (Node's pipes are), so it gets /dev/null,
+  // whose end it passes on as Ctrl-D. Linux `script` doesn't pass the end on, so answers go through a pipe.
+  const darwin = process.platform === "darwin";
+  const stdin = darwin || options.input === undefined ? "ignore" : "pipe";
+  const result = await spawnWith("script", scriptArgs, options, stdin);
   if (!result.stdout)
     throw new Error(`script printed nothing: ${result.stderr}`);
   // macOS `script` echoes ^D and two backspaces when stdin ends.
@@ -106,7 +110,11 @@ function spawnWith(
   };
   for (const key of Object.keys(env))
     if (env[key] === undefined) delete env[key];
-  const child = spawn(command, args, { env, stdio: [stdin, "pipe", "pipe"] });
+  const child = spawn(command, args, {
+    env,
+    cwd: options.cwd,
+    stdio: [stdin, "pipe", "pipe"],
+  });
   child.stdin?.end(options.input ?? "");
   let stdout = "";
   let stderr = "";
