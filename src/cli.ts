@@ -2,8 +2,14 @@
 import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
 import { authCommands } from "./commands/auth.ts";
-import { bookmarkCommands } from "./commands/bookmarks.ts";
+import { bookmarkCommands, idCommands } from "./commands/bookmarks.ts";
 import { collectionCommands } from "./commands/collections.ts";
+import { coverCommands } from "./commands/covers.ts";
+import { insightCommands } from "./commands/insights.ts";
+import { jobCommands } from "./commands/jobs.ts";
+import { smartFolderCommands } from "./commands/smart-folders.ts";
+import { tagCommands } from "./commands/tags.ts";
+import { trashCommands } from "./commands/trash.ts";
 import { resolveApiUrl } from "./config.ts";
 import { CliError, EXIT, usageError } from "./errors.ts";
 import { print, printError } from "./output.ts";
@@ -42,7 +48,14 @@ const GLOBAL_FLAGS: Record<string, Flag> = {
 
 const COMMANDS: Command[] = [
   ...bookmarkCommands,
+  ...idCommands,
+  ...coverCommands,
   ...collectionCommands,
+  ...tagCommands,
+  ...smartFolderCommands,
+  ...trashCommands,
+  ...jobCommands,
+  ...insightCommands,
   ...authCommands,
 ];
 
