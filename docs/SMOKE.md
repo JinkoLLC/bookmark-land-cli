@@ -34,3 +34,8 @@ Do these on each OS. Before you start, unset `BOOKMARK_TOKEN` and `BOOKMARK_NO_K
 
 - [ ] `bookmark list` in a terminal shows a table that fits the window, with long titles cut off. `bookmark list | cat` prints tab-separated values.
 - [ ] `bookmark open <id>` opens the Bookmark in your default browser.
+
+## Cover images
+
+- [ ] `bookmark cover set <id> <photo.jpg>` prints a URL that shows the image in a browser, and the app shows it as the Bookmark's cover.
+- [ ] Setting a different image replaces it, and `bookmark usage` shows the storage going down again after `bookmark cover rm <id>`.

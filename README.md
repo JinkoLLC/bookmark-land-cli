@@ -107,6 +107,16 @@ bookmark trash empty               # Permanently delete everything in the Trash 
 - `trash empty` Permanently deletes up to 200 Bookmarks at once. When there were more, the rest are deleted in the background, and the CLI tells you to check again later with `trash list`.
 - Bulk calls count each id against your rate limit (120 a minute on Pro), so a long list can hit it. The CLI then says how far it got, and exits 5.
 
+### Cover images
+
+```sh
+bookmark cover set bk_123 ./cover.png    # upload and set the cover, and print its URL
+bookmark cover rm bk_123                 # delete the cover image
+```
+
+- The image must be JPEG, PNG, GIF or WebP (checked from the file's contents), and at most 10 MB. Covers need Pro, and count against your 500 MB of storage.
+- The file goes straight to the one-time upload URL the API returns, which is the only address besides the API that the CLI ever contacts. Your Token is never sent there.
+
 ### Collections
 
 ```sh
@@ -242,7 +252,7 @@ Scripts and agents can rely on these. They never change.
 
 ## Privacy
 
-The CLI sends no telemetry and never checks for updates. It only contacts the API URL. Every request carries `User-Agent: bookmark-land-cli/<version> (node <version>; <os>)`.
+The CLI sends no telemetry and never checks for updates. It only contacts the API URL, plus the one-time upload URLs the API returns for covers. Every request carries `User-Agent: bookmark-land-cli/<version> (node <version>; <os>)`.
 
 ## Contributing
 

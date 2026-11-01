@@ -4,6 +4,7 @@ import pkg from "../package.json" with { type: "json" };
 import { authCommands } from "./commands/auth.ts";
 import { bookmarkCommands, idCommands } from "./commands/bookmarks.ts";
 import { collectionCommands } from "./commands/collections.ts";
+import { coverCommands } from "./commands/covers.ts";
 import { insightCommands } from "./commands/insights.ts";
 import { smartFolderCommands } from "./commands/smart-folders.ts";
 import { tagCommands } from "./commands/tags.ts";
@@ -47,6 +48,7 @@ const GLOBAL_FLAGS: Record<string, Flag> = {
 const COMMANDS: Command[] = [
   ...bookmarkCommands,
   ...idCommands,
+  ...coverCommands,
   ...collectionCommands,
   ...tagCommands,
   ...smartFolderCommands,
