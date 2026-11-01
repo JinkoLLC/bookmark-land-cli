@@ -11,7 +11,7 @@ A saved URL in a user's library, with its title, description, note, tags and col
 _Avoid_: Link, item, entry
 
 **Collection**:
-A named folder that holds bookmarks and can be nested up to five levels. Names are not unique.
+A named group of bookmarks that can be nested up to five levels. Names are not unique.
 _Avoid_: Folder, list, category
 
 **Unsorted**:
@@ -29,7 +29,7 @@ _Avoid_: Saved search, filter, view
 ### Removal
 
 **Trash**:
-Where removed bookmarks and collections wait for 30 days before they are deleted for good.
+Where removed bookmarks and collections wait for 30 days before they are permanently deleted.
 _Avoid_: Bin, recycle bin, archive
 
 **Remove**:
@@ -51,7 +51,7 @@ The secret (`bkl_…`) the CLI sends to the API on the user's behalf.
 _Avoid_: API key, password, credential
 
 **Scope**:
-A permission granted to a Token, such as `bookmarks:write` or `destructive`.
+A right granted to a Token, such as `bookmarks:write` or `destructive`.
 _Avoid_: Permission, role
 
 **Device login**:
