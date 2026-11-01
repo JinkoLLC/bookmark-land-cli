@@ -156,3 +156,21 @@ export interface Tag {
   count?: number;
   createdAt?: string;
 }
+
+// Times are epoch milliseconds.
+export interface Job {
+  id: string;
+  type: "import_html" | "export_json" | "export_csv" | "export_html";
+  status: "pending" | "running" | "finalizing" | "completed" | "failed";
+  progress?: { processed: number; total?: number };
+  createdAt?: number;
+  artifactExpiresAt?: number;
+  result?: {
+    total?: number;
+    imported?: number;
+    duplicates?: number;
+    skipped?: number;
+    quotaLimited?: boolean;
+  };
+  error?: { code?: string; message?: string };
+}

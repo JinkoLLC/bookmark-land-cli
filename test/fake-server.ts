@@ -6,7 +6,8 @@ export interface FakeRequest {
   path: string;
   query: Record<string, string>;
   headers: Record<string, string | string[] | undefined>;
-  body: unknown;
+  body: unknown; // parsed JSON; uploads (any other content type) are only in `raw`
+  raw: Buffer;
 }
 
 export interface FakeResponse {
@@ -18,16 +19,19 @@ export interface FakeResponse {
 
 type Handler = (req: FakeRequest) => FakeResponse | Promise<FakeResponse>;
 
-// A local stand-in for the bookmark.land API. Routes are "METHOD /path" (without /v1); a route given
-// an array answers with each response in turn and repeats the last one.
+// A local stand-in for the bookmark.land API, and for the upload and download URLs it hands out.
+// Routes are "METHOD /path" (without /v1); a route given an array answers with each response in
+// turn and repeats the last one.
 export async function startFakeServer(
   routes: Record<string, Handler | FakeResponse | FakeResponse[]>,
 ) {
   const requests: FakeRequest[] = [];
   const calls = new Map<string, number>();
   const server = createServer(async (req, res) => {
-    let text = "";
-    for await (const chunk of req) text += chunk;
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const bytes = Buffer.concat(chunks);
+    const json = String(req.headers["content-type"] ?? "").includes("json");
     const url = new URL(req.url ?? "/", "http://localhost");
     const path = url.pathname.replace(/^\/v1/, "");
     const fake: FakeRequest = {
@@ -35,7 +39,8 @@ export async function startFakeServer(
       path,
       query: Object.fromEntries(url.searchParams),
       headers: req.headers,
-      body: text ? JSON.parse(text) : undefined,
+      body: json && bytes.length ? JSON.parse(bytes.toString()) : undefined,
+      raw: bytes,
     };
     requests.push(fake);
     const key = `${fake.method} ${path}`;

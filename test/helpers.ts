@@ -26,6 +26,7 @@ interface RunOptions {
   apiUrl?: string;
   input?: string;
   env?: Record<string, string>;
+  cwd?: string;
 }
 
 // Runs the real `bookmark` process. It is isolated from the user's machine only through env.
@@ -109,7 +110,11 @@ function spawnWith(
   };
   for (const key of Object.keys(env))
     if (env[key] === undefined) delete env[key];
-  const child = spawn(command, args, { env, stdio: [stdin, "pipe", "pipe"] });
+  const child = spawn(command, args, {
+    env,
+    cwd: options.cwd,
+    stdio: [stdin, "pipe", "pipe"],
+  });
   child.stdin?.end(options.input ?? "");
   let stdout = "";
   let stderr = "";

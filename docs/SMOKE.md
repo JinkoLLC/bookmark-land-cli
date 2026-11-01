@@ -34,3 +34,26 @@ Do these on each OS. Before you start, unset `BOOKMARK_TOKEN` and `BOOKMARK_NO_K
 
 - [ ] `bookmark list` in a terminal shows a table that fits the window, with long titles cut off. `bookmark list | cat` prints tab-separated values.
 - [ ] `bookmark open <id>` opens the Bookmark in your default browser.
+
+## Cover images
+
+- [ ] `bookmark cover set <id> <photo.jpg>` prints a URL that shows the image in a browser, and the app shows it as the Bookmark's cover.
+- [ ] Setting a different image replaces it, and `bookmark usage` shows the storage going down again after `bookmark cover rm <id>`.
+
+## Import and export
+
+Log in with `bookmark login --scopes import,export` first.
+
+- [ ] Export your browser's bookmarks as HTML, and `bookmark import bookmarks.html` imports them, with the counts matching what the app shows.
+- [ ] Importing the same file again with `--skip-duplicates` reports them all as duplicates.
+- [ ] `bookmark export --format json`, `--format csv` and `--format html` each save a file that opens correctly, and the HTML one can be imported into a browser.
+- [ ] `bookmark export --format json --no-wait` prints a job id, and `bookmark jobs show <id>` shows it completed.
+
+## Newer API behaviour
+
+These rely on API changes that must be live before the release.
+
+- [ ] `bookmark list --tag <name>` pages with `--cursor`, and combines with `--collection` and `--domain`. `--sort title` with `--tag` exits 2.
+- [ ] `bookmark trash list` shows recently Removed Bookmarks, and `--json` includes `trashedAt` and `deletesAt`.
+- [ ] `bookmark trash empty --yes` with more than 200 Bookmarks in the Trash says the rest are deleting in the background. With fewer, it doesn't.
+- [ ] A failed import or export with `--json` has an error code such as `JOB_TIMED_OUT`.

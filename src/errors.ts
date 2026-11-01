@@ -6,6 +6,7 @@ export const EXIT = {
   auth: 3,
   notFound: 4,
   rateLimited: 5,
+  partial: 6, // completed partially: some data was not saved
 } as const;
 
 export class CliError extends Error {

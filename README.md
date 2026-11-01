@@ -107,6 +107,16 @@ bookmark trash empty               # Permanently delete everything in the Trash 
 - `trash empty` Permanently deletes up to 200 Bookmarks at once. When there were more, the rest are deleted in the background, and the CLI tells you to check again later with `trash list`.
 - Bulk calls count each id against your rate limit (120 a minute on Pro), so a long list can hit it. The CLI then says how far it got, and exits 5.
 
+### Cover images
+
+```sh
+bookmark cover set bk_123 ./cover.png    # upload and set the cover, and print its URL
+bookmark cover rm bk_123                 # delete the cover image
+```
+
+- The image must be JPEG, PNG, GIF or WebP (checked from the file's contents), and at most 10 MB. Covers need Pro, and count against your 500 MB of storage.
+- The file goes straight to the one-time upload URL the API returns, which is the only address besides the API that the CLI ever contacts. Your Token is never sent there.
+
 ### Collections
 
 ```sh
@@ -180,6 +190,25 @@ echo '{"match":"all","conditions":[{"field":"tag","operator":"contains","value":
 
 `smart-folders bookmarks` is limited to 2 calls a minute by the API (shared by all Smart folders), and fetches every page of a Smart folder, so a large one can hit the limit and exit 5.
 
+### Import and export
+
+```sh
+bookmark import bookmarks.html                       # a browser bookmarks export (HTML, up to 5 MB)
+bookmark import bookmarks.html --collection Imported --flatten --skip-duplicates
+bookmark export --format json                        # saves bookmarks-<date>.json; also csv or html
+bookmark export --format html -o backup.html --force # pick the file; --force overwrites it
+bookmark import bookmarks.html --no-wait             # print the job id and return
+bookmark jobs show job_123                           # type, status, progress, and the result or error
+```
+
+- Both wait for the job to finish. `import` then prints how many Bookmarks were imported, how many were duplicates, and how many were skipped (invalid URLs, for example). `export` downloads the file and prints where it saved it.
+- `import` needs the `import` Scope, and `export` the `export` Scope: `bookmark login --scopes import,export`.
+- `--flatten` puts everything in one Collection instead of recreating your browser's folders. `--skip-duplicates` leaves out URLs you've already saved; without it, they're saved again.
+- If an import reaches your plan's Bookmark limit, the rest of the file isn't imported. The CLI warns and exits 6.
+- `export` never overwrites an existing file unless you pass `--force`, and checks before it starts.
+- The export download link is used once and never printed: anyone holding it could download your library. It expires 2 hours after the export finishes, so `export --no-wait` is only useful for checking on the job with `jobs show`.
+- Import steps and exports are limited by the API to 2 calls a minute each. A rate limit exits 5 with the time to retry.
+
 ### Insights
 
 ```sh
@@ -231,18 +260,19 @@ bookmark whoami --json   # the API's data, unchanged
 
 Scripts and agents can rely on these. They never change.
 
-| Code | Meaning                                                                        |
-| ---- | ------------------------------------------------------------------------------ |
-| 0    | Success                                                                        |
-| 1    | Other error: network, server error, unexpected response                        |
-| 2    | Usage: unknown command or flag, invalid argument                               |
-| 3    | Auth: not logged in, invalid Token, no Pro plan, missing Scope                 |
-| 4    | Not found                                                                      |
-| 5    | Rate limited. The message says when to retry; the CLI never retries by itself. |
+| Code | Meaning                                                                                                |
+| ---- | ------------------------------------------------------------------------------------------------------ |
+| 0    | Success                                                                                                |
+| 1    | Other error: network, server error, unexpected response                                                |
+| 2    | Usage: unknown command or flag, invalid argument                                                       |
+| 3    | Auth: not logged in, invalid Token, no Pro plan, missing Scope                                         |
+| 4    | Not found                                                                                              |
+| 5    | Rate limited. The message says when to retry; the CLI never retries by itself.                         |
+| 6    | Completed partially: some data wasn't saved, such as an import that reached the plan's Bookmark limit. |
 
 ## Privacy
 
-The CLI sends no telemetry and never checks for updates. It only contacts the API URL. Every request carries `User-Agent: bookmark-land-cli/<version> (node <version>; <os>)`.
+The CLI sends no telemetry and never checks for updates. It only contacts the API URL, plus the one-time upload and download URLs the API returns for covers, imports and exports. Your Token is never sent to those. Every request carries `User-Agent: bookmark-land-cli/<version> (node <version>; <os>)`.
 
 ## Contributing
 
