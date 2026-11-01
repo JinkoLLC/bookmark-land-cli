@@ -74,6 +74,7 @@ export function report(
   verb: string,
   requested: number,
   affected: number,
+  detail = "", // such as ` with "reading"`
 ): void {
   if (ctx.json) {
     printJson({ requested, affected });
@@ -81,11 +82,11 @@ export function report(
   }
   if (affected >= requested) {
     success(
-      `${verb[0].toUpperCase()}${verb.slice(1)} ${requested} Bookmark${requested === 1 ? "" : "s"}`,
+      `${verb[0].toUpperCase()}${verb.slice(1)} ${requested} Bookmark${requested === 1 ? "" : "s"}${detail}`,
     );
   } else {
     warn(
-      `${affected} of ${requested} ${verb} (${requested - affected} not found or unchanged)`,
+      `${affected} of ${requested} ${verb}${detail} (${requested - affected} not found or unchanged)`,
     );
   }
 }
