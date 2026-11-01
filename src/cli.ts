@@ -4,6 +4,7 @@ import pkg from "../package.json" with { type: "json" };
 import { authCommands } from "./commands/auth.ts";
 import { bookmarkCommands } from "./commands/bookmarks.ts";
 import { collectionCommands } from "./commands/collections.ts";
+import { insightCommands } from "./commands/insights.ts";
 import { smartFolderCommands } from "./commands/smart-folders.ts";
 import { resolveApiUrl } from "./config.ts";
 import { CliError, EXIT, usageError } from "./errors.ts";
@@ -45,6 +46,7 @@ const COMMANDS: Command[] = [
   ...bookmarkCommands,
   ...collectionCommands,
   ...smartFolderCommands,
+  ...insightCommands,
   ...authCommands,
 ];
 

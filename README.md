@@ -136,6 +136,20 @@ echo '{"match":"all","conditions":[{"field":"tag","operator":"contains","value":
 
 `smart-folders bookmarks` is limited to 2 calls a minute by the API (shared by all Smart folders), and fetches every page of a Smart folder, so a large one can hit the limit and exit 5.
 
+### Insights
+
+```sh
+bookmark stats                  # total, favorites, Unsorted, counts by type, Bookmarks without Tags
+bookmark domains                # Bookmarks per domain, most first
+bookmark vulnerable             # Bookmarks whose sites have known security issues
+bookmark vulnerable --collection Work --domain example.com --type link --limit 20
+bookmark security bk_123        # a Bookmark's site security scan: risk, software and findings
+bookmark usage                  # plan, Bookmarks against the limit, Trash, storage used
+```
+
+- `vulnerable` lists the same columns as `list`, newest first, up to 100 (`--limit` 1–100) with no pages.
+- `stats`, `domains`, `search` and `vulnerable` are limited by the API to 30 calls a minute.
+
 ### Account
 
 ```sh

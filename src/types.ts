@@ -113,3 +113,37 @@ export interface SmartFolderPage {
   continueCursor: string | null;
   truncated?: boolean;
 }
+
+export interface Stats {
+  total: number;
+  favorites: number;
+  unsorted: number;
+  typeCounts: Record<string, number>;
+  noTags: number;
+}
+
+export interface SiteSecurity {
+  site: string;
+  riskLevel: string;
+  scanOutcome?: string;
+  lastScannedAt?: string;
+  detectedSoftware: { product: string; version?: string }[];
+  findings: {
+    product: string;
+    version?: string;
+    level: string;
+    cycle?: string;
+    eolDate?: string;
+    cveId?: string;
+    cvss?: number;
+    kev?: boolean;
+  }[];
+}
+
+export interface Usage {
+  bookmarkCount: number;
+  trashedCount: number;
+  bookmarkLimit: number;
+  plan: string;
+  storage: { usedBytes: number; limitBytes: number; maxFileBytes: number };
+}
