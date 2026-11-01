@@ -1,9 +1,44 @@
 {
   "name": "bookmark-land-cli",
   "version": "0.0.0",
+  "description": "Command-line client for bookmark.land: manage your bookmarks from the terminal or an AI agent",
   "license": "MIT",
   "type": "module",
+  "bin": {
+    "bookmark": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JinkoLLC/bookmark-land-cli.git"
+  },
+  "homepage": "https://github.com/JinkoLLC/bookmark-land-cli#readme",
+  "bugs": "https://github.com/JinkoLLC/bookmark-land-cli/issues",
+  "keywords": [
+    "bookmarks",
+    "bookmark.land",
+    "cli"
+  ],
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node26 --outfile=dist/cli.js --external:@napi-rs/keyring",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@types/node": "26.6.6",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  },
+  "optionalDependencies": {
+    "@napi-rs/keyring": "2.1.2"
   }
 }
