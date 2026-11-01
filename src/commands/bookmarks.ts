@@ -1,6 +1,7 @@
 import { request } from "../api.ts";
 import { requireToken } from "../auth.ts";
 import { openBrowser } from "../browser.ts";
+import { acrossIds, confirm, readIds, report } from "../bulk.ts";
 import type { Command, Context, Flags } from "../cli.ts";
 import { usageError } from "../errors.ts";
 import {
@@ -299,4 +300,101 @@ export const bookmarkCommands: Command[] = [
       openBrowser(bookmark.url);
     },
   },
+];
+
+const call = async (
+  ctx: Context,
+  method: string,
+  path: string,
+  body?: unknown,
+) =>
+  (
+    await request<Envelope<Record<string, number>>>(ctx.apiUrl, path, {
+      method,
+      token: await requireToken(ctx.apiUrl),
+      body,
+    })
+  ).data;
+const one = (id: string, rest = "") =>
+  `/bookmarks/${encodeURIComponent(id)}${rest}`;
+
+const favoriteCommand = (name: string, isFavorite: boolean): Command => ({
+  name,
+  args: "<id…>",
+  summary: isFavorite
+    ? "Mark Bookmarks as favorites"
+    : "Unmark favorite Bookmarks",
+  async run(ctx, args) {
+    const ids = await readIds(args);
+    const affected = await acrossIds(ids, {
+      single: (id) => call(ctx, "PUT", one(id, "/favorite"), { isFavorite }),
+      batch: async (batch) =>
+        (
+          await call(ctx, "POST", "/bookmarks/bulk/favorite", {
+            ids: batch,
+            isFavorite,
+          })
+        ).updated,
+    });
+    report(ctx, isFavorite ? "favorited" : "unfavorited", ids.length, affected);
+  },
+});
+
+export const idCommands: Command[] = [
+  {
+    name: "rm",
+    args: "<id…>",
+    summary:
+      "Remove Bookmarks (move them to the Trash), or Permanently delete them",
+    flags: {
+      permanent: {
+        type: "boolean",
+        description: "Permanently delete instead (needs the destructive Scope)",
+      },
+      yes: {
+        type: "boolean",
+        description: "Don't ask before Permanently deleting",
+      },
+    },
+    async run(ctx, args, flags) {
+      const ids = await readIds(args);
+      if (flags.permanent) {
+        const what =
+          ids.length === 1 ? "this Bookmark" : `these ${ids.length} Bookmarks`;
+        await confirm(`Permanently delete ${what}?`, flags.yes === true);
+        // There is no bulk endpoint for this, so one call per id.
+        const affected = await acrossIds(ids, {
+          single: (id) => call(ctx, "DELETE", one(id, "/permanent")),
+        });
+        return report(ctx, "permanently deleted", ids.length, affected);
+      }
+      const affected = await acrossIds(ids, {
+        single: (id) => call(ctx, "DELETE", one(id)),
+        batch: async (batch) =>
+          (await call(ctx, "POST", "/bookmarks/bulk/trash", { ids: batch }))
+            .trashed,
+        // The ids, so they can be Restored later (the API doesn't say which ones it skipped).
+        // Printed per batch, so a failure halfway still leaves the ones already sent.
+        sent: (batch) => {
+          if (!ctx.json) for (const id of batch) print(id);
+        },
+      });
+      report(ctx, "removed", ids.length, affected);
+    },
+  },
+  {
+    name: "restore",
+    args: "<id…>",
+    summary: "Restore Bookmarks from the Trash",
+    async run(ctx, args) {
+      const ids = await readIds(args);
+      // There is no bulk endpoint for this, so one call per id.
+      const affected = await acrossIds(ids, {
+        single: (id) => call(ctx, "POST", one(id, "/restore")),
+      });
+      report(ctx, "restored", ids.length, affected);
+    },
+  },
+  favoriteCommand("favorite", true),
+  favoriteCommand("unfavorite", false),
 ];

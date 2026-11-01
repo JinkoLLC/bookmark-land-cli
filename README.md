@@ -82,6 +82,29 @@ bookmark edit bk_123 --title "Better title"           # also --description, --ur
 - If the URL is in the Trash, `add` Restores that Bookmark instead and says so. If it's already saved, the API saves another copy, and `add` warns you with the new id.
 - The API rejects invalid input with a generic error, so the CLI checks the limits first and tells you what's wrong: URLs must be `http` or `https` and up to 2,048 characters, titles up to 100, descriptions and notes up to 500, at most 10 Tags of up to 25 characters each.
 
+### Removing, Restoring and favorites
+
+```sh
+bookmark rm bk_1 bk_2              # Remove: move to the Trash, and print the ids
+bookmark restore bk_1 bk_2         # Restore from the Trash
+bookmark favorite bk_1 bk_2        # also: unfavorite
+bookmark rm --permanent bk_1       # Permanently delete (asks [y/N]; needs the destructive Scope)
+bookmark trash list                # what's in the Trash, most recently Removed first (--limit, --cursor)
+bookmark trash empty               # Permanently delete everything in the Trash (asks [y/N])
+```
+
+- Every command that takes ids takes several, or `-` to read them from stdin, one per line. Large lists are sent in batches of 50:
+
+  ```sh
+  bookmark list --domain old.example.com --json | jq -r '.data[].id' | bookmark rm -
+  ```
+
+- When the API changes fewer Bookmarks than you asked for, the CLI says so, for example "2 of 3 removed (1 not found or unchanged)", and still exits 0. Already-Removed or already-favorite Bookmarks count as unchanged. With `--json`, these commands print `{ "requested": 3, "affected": 2 }`.
+- Remove and Restore never ask for confirmation. `rm --permanent` and `trash empty` can't be undone: they ask `[y/N]` in a terminal, and without a terminal they exit 2 unless you pass `--yes`.
+- `trash list` shows the ids to pass to `restore` or `rm --permanent`. With `--json`, each Bookmark also has `trashedAt` and `deletesAt` (30 days after it was Removed).
+- `trash empty` Permanently deletes up to 200 Bookmarks at once. When there were more, the rest are deleted in the background, and the CLI tells you to check again later with `trash list`.
+- Bulk calls count each id against your rate limit (120 a minute on Pro), so a long list can hit it. The CLI then says how far it got, and exits 5.
+
 ### Collections
 
 ```sh
@@ -156,6 +179,13 @@ bookmark usage                  # plan, Bookmarks against the limit, Trash, stor
 bookmark whoami          # name, email, plan, Token source (keychain, config file or BOOKMARK_TOKEN), API URL
 bookmark whoami --json   # the API's data, unchanged
 ```
+
+## Using with AI agents
+
+- Authenticate with `BOOKMARK_TOKEN`; nothing is written to disk.
+- Add `--json` to get the API's `data` on stdout, and errors as JSON on stderr. Decide what to do next from the exit code.
+- The CLI never prompts when stdin isn't a terminal. Commands that can't be undone (`rm --permanent`, `trash empty`) exit 2 unless you pass `--yes`.
+- Pipe ids between commands with `-`, for example `... | jq -r '.data[].id' | bookmark rm -`.
 
 ## Output
 
