@@ -95,7 +95,7 @@ bookmark trash list                # what's in the Trash, most recently Removed 
 bookmark trash empty               # Permanently delete everything in the Trash (asks [y/N])
 ```
 
-- `rm`, `restore`, `favorite` and `unfavorite` take several ids, or `-` to read them from stdin, one per line. Large lists are sent in batches of 50. `list` prints one page (up to 200 with `--limit 200`), so this removes at most 200; run it again for the rest:
+- `rm`, `restore`, `favorite`, `unfavorite` and `move` take several ids, or `-` to read them from stdin, one per line. Large lists are sent in batches of 50. `list` prints one page (up to 200 with `--limit 200`), so this removes at most 200; run it again for the rest:
 
   ```sh
   bookmark list --domain old.example.com --limit 200 --json | jq -r '.data[].id' | bookmark rm -
