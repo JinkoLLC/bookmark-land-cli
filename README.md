@@ -100,6 +100,42 @@ bookmark collections share Reading                 # whether it's shared, and it
 - `collections rm` and `collections restore` move at most 1,000 Collections and Bookmarks at once. For a larger Collection, do it in parts: Remove or Restore its child Collections first, or move some of its Bookmarks out.
 - `collections list --json` prints every Collection, with all pages joined: `{ "collections": [...], "nextCursor": null }`.
 
+### Smart folders
+
+A Smart folder is a saved set of rules. It holds no Bookmarks of its own; it matches them.
+
+```sh
+bookmark smart-folders list
+bookmark smart-folders show "AI reading"                  # by exact name or id
+bookmark smart-folders add "AI reading" --rule "tag contains ai" --rule "created-after equals 2026-01-01"
+bookmark smart-folders add "Code" --match any --rule "domain equals github.com" --rule "domain equals gitlab.com"
+bookmark smart-folders edit "AI reading" --name "AI" --rule "tag equals ai"   # also --icon, --color, --match
+bookmark smart-folders bookmarks "AI reading"             # the Bookmarks it matches
+bookmark smart-folders rm "AI reading"                    # delete the Smart folder; its Bookmarks are untouched
+```
+
+Rules are `"<field> <operator> <value>"`, from 1 to 10 per Smart folder, and `--match all` (the default) or `--match any`:
+
+| Field                             | Operators            | Value                                                  |
+| --------------------------------- | -------------------- | ------------------------------------------------------ |
+| `tag`                             | `equals`, `contains` | a Tag name                                             |
+| `domain`                          | `equals`, `contains` | a domain                                               |
+| `type`                            | `equals`             | `link`, `article`, `image`, `video` or `document`      |
+| `is-favorite`                     | `equals`             | `true` or `false`                                      |
+| `created-after`, `created-before` | `equals`             | a date, such as `2026-01-01` or `2026-01-01T12:00:00Z` |
+| `click-count`                     | `gte`, `lte`         | a whole number                                         |
+
+Values can contain spaces (`--rule "tag contains machine learning"`) and are up to 500 characters. Invalid rules are rejected before anything is sent, with the valid options listed.
+
+Agents can pass rules in the API's own JSON format instead, from a file or from stdin with `-`. Dates are then milliseconds since 1970, as strings:
+
+```sh
+echo '{"match":"all","conditions":[{"field":"tag","operator":"contains","value":"ai"}]}' \
+  | bookmark smart-folders add "AI reading" --rules-json -
+```
+
+`smart-folders bookmarks` is limited to 2 calls a minute by the API (shared by all Smart folders), and fetches every page of a Smart folder, so a large one can hit the limit and exit 5.
+
 ### Account
 
 ```sh

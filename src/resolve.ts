@@ -23,7 +23,31 @@ export async function listCollections(
   return all;
 }
 
-// A Collection is named by its id or its exact name. Names are not unique, so an ambiguous name is a usage error.
+// Collections and Smart folders are named by their id or exact name. Names are not unique,
+// so an ambiguous name is a usage error that lists each match.
+export function pickByName<T extends { id: string; name: string }>(
+  items: T[],
+  nameOrId: string,
+  kind: string,
+  detail: (item: T) => string = () => "",
+  where = "",
+): string {
+  if (items.some((item) => item.id === nameOrId)) return nameOrId;
+  const matches = items.filter((item) => item.name === nameOrId);
+  if (matches.length === 1) return matches[0].id;
+  if (matches.length === 0) {
+    throw new CliError(
+      `No ${kind}${where} is named "${nameOrId}"`,
+      EXIT.notFound,
+      "NOT_FOUND",
+    );
+  }
+  const lines = matches.map((m) => `  ${m.id}  ${m.name}${detail(m)}`);
+  throw usageError(
+    `${matches.length} ${kind}s${where} are named "${nameOrId}". Use an id instead:\n${lines.join("\n")}`,
+  );
+}
+
 export async function resolveCollection(
   apiUrl: string,
   token: string,
@@ -31,25 +55,15 @@ export async function resolveCollection(
   trashed = false,
 ): Promise<string> {
   const collections = await listCollections(apiUrl, token, trashed);
-  if (collections.some((c) => c.id === nameOrId)) return nameOrId;
-  const matches = collections.filter((c) => c.name === nameOrId);
-  if (matches.length === 1) return matches[0].id;
-  const where = trashed ? " in the Trash" : "";
-  if (matches.length === 0) {
-    throw new CliError(
-      `No Collection${where} is named "${nameOrId}"`,
-      EXIT.notFound,
-      "NOT_FOUND",
-    );
-  }
   const byId = new Map(collections.map((c) => [c.id, c.name]));
-  const lines = matches.map((c) => {
-    const parent = c.parentId
-      ? `in ${byId.get(c.parentId) ?? c.parentId}`
-      : "top level";
-    return `  ${c.id}  ${c.name} (${parent})`;
-  });
-  throw usageError(
-    `${matches.length} Collections${where} are named "${nameOrId}". Use an id instead:\n${lines.join("\n")}`,
+  return pickByName(
+    collections,
+    nameOrId,
+    "Collection",
+    (c) =>
+      c.parentId
+        ? ` (in ${byId.get(c.parentId) ?? c.parentId})`
+        : " (top level)",
+    trashed ? " in the Trash" : "",
   );
 }

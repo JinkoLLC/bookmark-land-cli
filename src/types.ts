@@ -93,3 +93,23 @@ export interface CollectionPage {
   collections: Collection[];
   nextCursor: string | null;
 }
+
+export interface SmartFolderRules {
+  match: "all" | "any";
+  conditions: { field: string; operator: string; value: string }[];
+}
+
+export interface SmartFolder {
+  id: string;
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  rules: SmartFolderRules;
+  createdAt?: string;
+}
+
+export interface SmartFolderPage {
+  bookmarks: Bookmark[];
+  continueCursor: string | null;
+  truncated?: boolean;
+}
