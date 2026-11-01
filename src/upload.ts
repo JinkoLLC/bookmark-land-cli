@@ -38,3 +38,29 @@ export async function uploadFile(
   }
   return storageId;
 }
+
+// Fetches a file from a one-time download URL from the API. Like uploads, it never carries the
+// Token, and the URL is never printed: anyone holding it can download the file.
+export async function downloadFile(url: string): Promise<Uint8Array> {
+  let res: Response;
+  let bytes: ArrayBuffer;
+  try {
+    res = await fetch(url, { headers: { "user-agent": USER_AGENT } });
+    bytes = await res.arrayBuffer();
+  } catch (err) {
+    const cause = (err as { cause?: Error }).cause?.message;
+    throw new CliError(
+      `Could not download the file: ${cause ?? (err as Error).message}`,
+      undefined,
+      "DOWNLOAD_FAILED",
+    );
+  }
+  if (!res.ok) {
+    throw new CliError(
+      `The download failed (${res.status} ${res.statusText}). Run the command again.`,
+      undefined,
+      "DOWNLOAD_FAILED",
+    );
+  }
+  return new Uint8Array(bytes);
+}
