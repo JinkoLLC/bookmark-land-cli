@@ -12,7 +12,14 @@ import { openBrowser } from "../browser.ts";
 import type { Command } from "../cli.ts";
 import { pollForToken, startDeviceLogin } from "../device-login.ts";
 import { usageError } from "../errors.ts";
-import { info, printFields, printJson, success, warn } from "../output.ts";
+import {
+  clean,
+  info,
+  printFields,
+  printJson,
+  success,
+  warn,
+} from "../output.ts";
 import { readStdin } from "../stdin.ts";
 import type { DeviceCode, Envelope, Me } from "../types.ts";
 
@@ -28,7 +35,7 @@ async function waitForApproval(device: DeviceCode): Promise<void> {
       output: process.stderr,
     });
     await rl.question(
-      `Press Enter to open ${device.verification_uri} in your browser...`,
+      `Press Enter to open ${clean(device.verification_uri)} in your browser...`,
     );
     rl.close();
     openBrowser(device.verification_uri_complete);
