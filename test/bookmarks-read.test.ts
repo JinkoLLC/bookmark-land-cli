@@ -201,6 +201,41 @@ test("list ends with the next --cursor when there are more results", async () =>
   );
 });
 
+test("list warns when a favorites sort could not cover every favorite", async () => {
+  const { code, stderr } = await withServer(
+    { "GET /bookmarks": page({ truncated: true }) },
+    ["list", "--favorite", "--sort", "title"],
+  );
+  assert.equal(code, 0);
+  assert.match(
+    stderr,
+    /Only your most recently saved favorites were sorted\. Use --sort newest or --sort oldest/,
+  );
+});
+
+test("list and show drop terminal control sequences from API text", async () => {
+  const evil = { ...bookmarks[1], title: "Hi\x1b]0;pwned\x07\x1b[2J there" };
+  const list = await withServer(
+    {
+      "GET /bookmarks": ok({
+        data: [evil],
+        cursor: null,
+        hasMore: false,
+        truncated: false,
+      }),
+    },
+    ["list"],
+  );
+  const show = await withServer({ "GET /bookmarks/bk_2": ok(evil) }, [
+    "show",
+    "bk_2",
+  ]);
+  for (const { stdout } of [list, show]) {
+    assert.match(stdout, /Hi \]0;pwned \[2J there/);
+    assert.ok(!stdout.includes("\x1b") && !stdout.includes("\x07"), stdout);
+  }
+});
+
 test("search lists the matches; --json prints the array", async () => {
   const routes = { "GET /bookmarks/search": ok(bookmarks) };
   const piped = await withServer(routes, ["search", "react", "hooks"]);
@@ -241,7 +276,7 @@ test("show prints every field the API returns, skipping missing ones", async () 
       "domain:     example.com",
       "tags:       dev, reference",
       "isFavorite: true",
-      "note:       Read\tthis",
+      "note:       Read this", // the tab is dropped like any control character
       "siteRisk:   level: endOfLife, findingCount: 1",
       "",
     ].join("\n"),

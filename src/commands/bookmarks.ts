@@ -3,7 +3,14 @@ import { requireToken } from "../auth.ts";
 import { openBrowser } from "../browser.ts";
 import type { Command, Context, Flags } from "../cli.ts";
 import { usageError } from "../errors.ts";
-import { info, print, printJson, printObject, printTable } from "../output.ts";
+import {
+  info,
+  print,
+  printJson,
+  printObject,
+  printTable,
+  warn,
+} from "../output.ts";
 import type { Bookmark, BookmarkPage, Envelope } from "../types.ts";
 
 export const BOOKMARK_TYPES = ["link", "article", "image", "video", "document"];
@@ -109,6 +116,11 @@ export const bookmarkCommands: Command[] = [
       printBookmarks(ctx, data, data.data);
       if (!ctx.json && data.hasMore && data.cursor) {
         info(`More results. Next page: add --cursor ${data.cursor}`);
+      }
+      if (!ctx.json && data.truncated) {
+        warn(
+          "Only your most recently saved favorites were sorted. Use --sort newest or --sort oldest to page through all of them.",
+        );
       }
     },
   },

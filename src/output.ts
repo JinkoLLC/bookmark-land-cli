@@ -27,13 +27,18 @@ export function warn(message: string): void {
   info(`${paint(33, process.stderr, "!")} ${message}`);
 }
 
+// API values can hold text from any web page: drop control characters (tabs, line breaks,
+// escape sequences) so a Bookmark title can't break the layout or drive the terminal.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point.
+const clean = (text: string) => text.replace(/[\x00-\x1f\x7f-\x9f]+/g, " ");
+
 export function printFields(
   fields: [string, string | null | undefined][],
 ): void {
   const width = Math.max(...fields.map(([label]) => label.length)) + 1;
   for (const [label, value] of fields) {
     print(
-      `${paint(1, process.stdout, `${label}:`.padEnd(width))} ${value ?? "-"}`,
+      `${paint(1, process.stdout, `${label}:`.padEnd(width))} ${value == null ? "-" : clean(value)}`,
     );
   }
 }
@@ -57,7 +62,7 @@ export function printTable(
   rows: string[][],
   flex?: number,
 ): void {
-  const cells = rows.map((row) => row.map((v) => v.replace(/[\t\r\n]+/g, " ")));
+  const cells = rows.map((row) => row.map(clean));
   if (!process.stdout.isTTY) {
     for (const row of cells) print(row.join("\t"));
     return;
