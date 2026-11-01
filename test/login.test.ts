@@ -130,8 +130,9 @@ test("login cleans API text in messages while preserving the device code", async
   }
 });
 
+// Only Linux `script` can pass an answer to the prompt.
 test("login cleans the terminal prompt and keeps the browser URL intact", {
-  skip: noTty,
+  skip: noTty || process.platform === "darwin",
 }, async () => {
   const browser = fakeBrowser();
   const url = "https://app.example/\u001b[2Jcode";
