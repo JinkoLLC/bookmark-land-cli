@@ -1,4 +1,5 @@
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { configDir } from "./config.ts";
 import { CliError, EXIT } from "./errors.ts";
@@ -52,10 +53,13 @@ async function readFileTokens(): Promise<Record<string, string>> {
 
 async function writeFileTokens(tokens: Record<string, string>): Promise<void> {
   await mkdir(configDir(), { recursive: true, mode: 0o700 });
-  await writeFile(credentialsPath(), `${JSON.stringify(tokens, null, 2)}\n`, {
+  // Write a fresh file and rename it over the old one, so an interrupted write never leaves broken JSON.
+  const tmp = `${credentialsPath()}.${randomUUID()}.tmp`;
+  await writeFile(tmp, `${JSON.stringify(tokens, null, 2)}\n`, {
     mode: 0o600,
+    flag: "wx",
   });
-  await chmod(credentialsPath(), 0o600); // `mode` above only applies when the file is created
+  await rename(tmp, credentialsPath());
 }
 
 async function removeFromFile(apiUrl: string): Promise<void> {

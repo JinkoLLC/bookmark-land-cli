@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, rm, stat } from "node:fs/promises";
+import { readdir, readFile, rm, stat } from "node:fs/promises";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { beforeEach, test } from "node:test";
@@ -86,6 +86,9 @@ test("login keeps waiting while approval is pending, then saves the Token", asyn
   assert.equal(requests.at(-1)?.headers.authorization, "Bearer bkl_device");
 
   assert.deepEqual(await credentials(), { [hostOf(url)]: "bkl_device" });
+  assert.deepEqual(await readdir(join(configHome, "bookmark-land")), [
+    "credentials.json",
+  ]); // the temporary file was renamed into place
   if (process.platform !== "win32") {
     assert.equal((await stat(credentialsFile)).mode & 0o777, 0o600);
     assert.equal(
