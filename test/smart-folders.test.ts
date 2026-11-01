@@ -66,6 +66,25 @@ test("smart-folders list shows each Smart folder's rules", async () => {
   assert.deepEqual(JSON.parse(json.stdout), [ai, gh]);
 });
 
+test("smart-folders list shows a date it can't read as it is", async () => {
+  const odd = {
+    ...gh,
+    rules: {
+      match: "all",
+      conditions: [
+        { field: "createdAfter", operator: "equals", value: "soon" },
+      ],
+    },
+  };
+  const { code, stdout, stderr } = await withServer(
+    { "GET /smart-folders": ok([odd, ai]) },
+    ["smart-folders", "list"],
+  );
+  assert.equal(code, 0, stderr);
+  assert.match(stdout, /^sf_gh\tGitHub\tcreated-after equals soon$/m);
+  assert.match(stdout, /created-after equals 2026-01-01$/m);
+});
+
 test("smart-folders show finds a Smart folder by name or id", async () => {
   const routes = { ...folders, "GET /smart-folders/sf_ai": ok(ai) };
   for (const name of ["AI reading", "sf_ai"]) {
@@ -175,6 +194,7 @@ for (const [args, message, input] of [
     /Can't read the rule "color equals red"\. Valid rules:\n {2}tag equals\|contains/,
   ],
   [["--rule", "tag"], /Can't read the rule/],
+  [["--rule", "constructor equals x"], /Can't read the rule/],
   [["--rule", "tag gte 5"], /"tag" rules use equals or contains, not "gte"/],
   [
     ["--rule", "type equals pdf"],

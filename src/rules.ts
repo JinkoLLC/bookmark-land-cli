@@ -102,7 +102,8 @@ export function parseRules(rules: string[], match = "all"): SmartFolderRules {
   const conditions = rules.map((rule) => {
     const [, cli = "", operator = "", raw = ""] =
       /^\s*(\S+)\s+(\S+)\s+(.*?)\s*$/.exec(rule) ?? [];
-    const spec = FIELDS[cli];
+    // Own keys only: "constructor" or "toString" would otherwise find Object's built-ins.
+    const spec = Object.hasOwn(FIELDS, cli) ? FIELDS[cli] : undefined;
     if (!spec)
       throw usageError(
         `Can't read the rule "${rule}". Valid rules:\n${fieldList()}`,
@@ -154,9 +155,12 @@ export function checkRulesJson(text: string): SmartFolderRules {
 // The readable form of a rule, for tables and `show`.
 export function describeRules(rules: SmartFolderRules): string {
   const parts = rules.conditions.map(({ field, operator, value }) => {
-    const iso =
-      field.startsWith("created") && new Date(Number(value)).toISOString();
-    const shown = iso ? iso.replace("T00:00:00.000Z", "") : value;
+    // Server data: a date that isn't valid is shown as it is instead of failing the whole list.
+    const date = field.startsWith("created") && new Date(Number(value));
+    const shown =
+      date && !Number.isNaN(date.getTime())
+        ? date.toISOString().replace("T00:00:00.000Z", "")
+        : value;
     return `${byApiName.get(field) ?? field} ${operator} ${shown}`;
   });
   return parts.join(rules.match === "any" ? " or " : " and ");
