@@ -82,12 +82,14 @@ bookmark edit bk_123 --title "Better title"           # also --description, --ur
 - If the URL is in the Trash, `add` Restores that Bookmark instead and says so. If it's already saved, the API saves another copy, and `add` warns you with the new id.
 - The API rejects invalid input with a generic error, so the CLI checks the limits first and tells you what's wrong: URLs must be `http` or `https` and up to 2,048 characters, titles up to 100, descriptions and notes up to 500, at most 10 Tags of up to 25 characters each.
 
-### Removing, Restoring and favorites
+### Removing, Restoring, moving and favorites
 
 ```sh
 bookmark rm bk_1 bk_2              # Remove: move to the Trash, and print the ids
 bookmark restore bk_1 bk_2         # Restore from the Trash
 bookmark favorite bk_1 bk_2        # also: unfavorite
+bookmark move bk_1 bk_2 --to Reading   # into a Collection (name or id)
+bookmark move bk_1 --to unsorted   # back to Unsorted
 bookmark rm --permanent bk_1       # Permanently delete (asks [y/N]; needs the destructive Scope)
 bookmark trash list                # what's in the Trash, most recently Removed first (--limit, --cursor)
 bookmark trash empty               # Permanently delete everything in the Trash (asks [y/N])

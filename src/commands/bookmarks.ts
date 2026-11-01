@@ -395,6 +395,41 @@ export const idCommands: Command[] = [
       report(ctx, "restored", ids.length, affected);
     },
   },
+  {
+    name: "move",
+    args: "<id…>",
+    summary: "Move Bookmarks into a Collection, or back to Unsorted",
+    flags: {
+      to: {
+        type: "string",
+        description: "The Collection (name or id), or unsorted",
+      },
+    },
+    async run(ctx, args, flags) {
+      const to = flags.to as string | undefined;
+      if (!to) throw usageError("Say where to: --to <collection|unsorted>");
+      const ids = await readIds(args);
+      const collectionId =
+        to.toLowerCase() === "unsorted"
+          ? null
+          : await resolveCollection(
+              ctx.apiUrl,
+              await requireToken(ctx.apiUrl),
+              to,
+            );
+      const affected = await acrossIds(ids, {
+        single: (id) => call(ctx, "POST", one(id, "/move"), { collectionId }),
+        batch: async (batch) =>
+          (
+            await call(ctx, "POST", "/bookmarks/bulk/move", {
+              ids: batch,
+              collectionId,
+            })
+          ).moved,
+      });
+      report(ctx, "moved", ids.length, affected);
+    },
+  },
   favoriteCommand("favorite", true),
   favoriteCommand("unfavorite", false),
 ];
