@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
+import { CliError } from "./errors.ts";
 
 // Opens an http(s) URL in the default browser. No shell is involved, so URLs with `&` or quotes are safe.
 export function openBrowser(url: string): void {
   const { protocol } = new URL(url);
   if (protocol !== "https:" && protocol !== "http:") {
-    throw new Error(`Refusing to open a non-web URL: ${url}`);
+    throw new CliError(`Not opening a URL that isn't http or https: ${url}`);
   }
   const [command, args] =
     process.platform === "darwin"
