@@ -16,19 +16,18 @@ export function print(line = ""): void {
 }
 
 export function info(message: string): void {
-  process.stderr.write(`${message}\n`);
+  process.stderr.write(`${clean(message)}\n`);
 }
 
 export function success(message: string): void {
-  info(`${paint(32, process.stderr, "✓")} ${message}`);
+  process.stderr.write(`${paint(32, process.stderr, "✓")} ${clean(message)}\n`);
 }
 
 export function warn(message: string): void {
-  info(`${paint(33, process.stderr, "!")} ${message}`);
+  process.stderr.write(`${paint(33, process.stderr, "!")} ${clean(message)}\n`);
 }
 
-// API values can hold text from any web page: drop control characters (tabs, line breaks,
-// escape sequences) so a Bookmark title can't break the layout or drive the terminal.
+// API values can hold text from any web page: drop controls so they can't drive the terminal.
 export const clean = (text: string) =>
   // biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point.
   text.replace(/[\x00-\x1f\x7f-\x9f]+/g, " ");
@@ -49,11 +48,21 @@ export function printError(err: unknown, json: boolean): void {
   const message = err instanceof Error ? err.message : String(err);
   const requestId = err instanceof ApiError ? err.requestId : undefined;
   if (json) {
-    info(JSON.stringify({ error: { code, message, requestId } }));
+    const output = JSON.stringify({ error: { code, message, requestId } });
+    // JSON.stringify escapes C0 controls; escape DEL and C1 as well without changing the values.
+    process.stderr.write(
+      `${output.replace(/[\x7f-\x9f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`)}\n`,
+    );
     return;
   }
   const suffix = requestId ? ` (request id: ${requestId})` : "";
-  info(`${paint(31, process.stderr, "error:")} ${message}${suffix}`);
+  // Usage errors include multi-line command help; API errors must stay on one line.
+  const text = `${message}${suffix}`;
+  const human =
+    code === "USAGE" && err instanceof CliError && !(err instanceof ApiError)
+      ? text.split("\n").map(clean).join("\n")
+      : clean(text);
+  process.stderr.write(`${paint(31, process.stderr, "error:")} ${human}\n`);
 }
 
 // On a terminal: aligned columns with a header, and the `flex` column truncated to fit the width.

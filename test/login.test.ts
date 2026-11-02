@@ -9,7 +9,7 @@ import {
   ok,
   startFakeServer,
 } from "./fake-server.ts";
-import { configHome, run } from "./helpers.ts";
+import { configHome, fakeBrowser, noTty, run, runTty } from "./helpers.ts";
 
 const me = {
   userId: "u1",
@@ -95,6 +95,120 @@ test("login keeps waiting while approval is pending, then saves the Token", asyn
       (await stat(join(configHome, "bookmark-land"))).mode & 0o777,
       0o700,
     );
+  }
+});
+
+test("login cleans API text in messages while preserving the device code", async () => {
+  const server = await startFakeServer({
+    "POST /auth/device": {
+      body: {
+        ...device().body,
+        device_code: "device\u001bcode",
+        user_code: "USER\u001b[2J\rCODE\u009b2J",
+        verification_uri_complete: "https://app.example/\u001b[2J\ncode",
+      },
+    },
+    "POST /auth/device/token": granted,
+    "GET /auth/verify": ok({ ...me, name: "Ada\u001b[2J\rSpoof" }),
+  });
+  try {
+    const { code, stderr } = await run(["login"], { apiUrl: server.url });
+    assert.equal(code, 0, stderr);
+    assert.match(stderr, /User code: USER \[2J CODE 2J/);
+    assert.match(
+      stderr,
+      /Open https:\/\/app\.example\/ \[2J code in a browser/,
+    );
+    assert.match(stderr, /Logged in as Ada \[2J Spoof/);
+    assert.equal(stderr.includes("\u001b"), false);
+    assert.equal(stderr.includes("\u009b"), false);
+    assert.deepEqual(server.requests[1].body, {
+      device_code: "device\u001bcode",
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+// Only Linux `script` can pass an answer to the prompt.
+test("login cleans the terminal prompt and keeps the browser URL intact", {
+  skip: noTty || process.platform === "darwin",
+}, async () => {
+  const browser = fakeBrowser();
+  const url = "https://app.example/\u001b[2Jcode";
+  const server = await startFakeServer({
+    "POST /auth/device": {
+      body: {
+        ...device().body,
+        user_code: "USER\u001b[2J",
+        verification_uri: "https://app.example/\u001b[2J\rcli\u009b2J",
+        verification_uri_complete: url,
+      },
+    },
+    "POST /auth/device/token": granted,
+    "GET /auth/verify": ok(me),
+  });
+  try {
+    const { code, stdout } = await runTty(["login"], {
+      apiUrl: server.url,
+      input: "\n",
+      env: { PATH: `${browser.env.PATH}:${process.env.PATH}`, NO_COLOR: "" },
+    });
+    assert.equal(code, 0, stdout);
+    assert.ok(stdout.includes("\u001b[33m!\u001b[0m Your User code: USER [2J"));
+    assert.match(
+      stdout,
+      /Press Enter to open https:\/\/app\.example\/ \[2J cli 2J in your browser/,
+    );
+    assert.equal(stdout.includes("\u001b[2J"), false);
+    assert.equal(stdout.includes("\u009b"), false);
+    assert.equal(await browser.opened(), url);
+  } finally {
+    await server.close();
+  }
+});
+
+test("login errors are terminal safe and preserve JSON values", async () => {
+  const message = "Denied\u001b[2J\rSpoof\u009b2J\nFake";
+  const requestId = "req\u007f\u009btest";
+  const server = await startFakeServer({
+    "POST /auth/device": device(),
+    "POST /auth/device/token": apiError(400, "ACCESS_DENIED", message),
+    "GET /auth/verify": {
+      status: 401,
+      body: { error: { code: "USAGE", message }, meta: { requestId } },
+    },
+  });
+  try {
+    const human = await run(["login", "--with-token"], {
+      apiUrl: server.url,
+      input: "bad",
+    });
+    assert.equal(human.code, 3);
+    assert.match(
+      human.stderr,
+      /Denied \[2J Spoof 2J Fake \(request id: req test\)/,
+    );
+    assert.equal(human.stderr.includes("\u001b"), false);
+    assert.equal(human.stderr.includes("\u009b"), false);
+    const json = await run(["login", "--with-token", "--json"], {
+      apiUrl: server.url,
+      input: "bad",
+    });
+    assert.equal(json.code, 3);
+    assert.equal(json.stderr.includes("\u007f"), false);
+    assert.equal(json.stderr.includes("\u009b"), false);
+    assert.deepEqual(JSON.parse(json.stderr), {
+      error: { code: "USAGE", message, requestId },
+    });
+    const denied = await run(["login"], { apiUrl: server.url });
+    assert.equal(denied.code, 3);
+    assert.match(
+      denied.stderr,
+      /Login was not approved: Denied \[2J Spoof 2J Fake/,
+    );
+  } finally {
+    await server.close();
   }
 });
 
